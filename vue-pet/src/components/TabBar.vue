@@ -5,8 +5,14 @@
         :key="index"
         @click= "switchItem(item.path)"
         >
-        <img :src="item.icon">
-        <span>{{item.title}}</span>
+        <img :src="$route.path.includes(item.path) ? item.selectIcon : item.icon">
+        <span 
+          :style="{ 
+            color: $route.path.includes(item.path) ? '#AEE4FF' : '#999' 
+          }"
+        >
+          {{ item.title }}
+        </span>
       </li>
     </ul>
   </div>
@@ -17,10 +23,10 @@ import { ref } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 const router = useRouter()
 const tabbarList = ref([
-  {title: "首页",path: "/",icon: "../images/tabbar/home.png",selectIcon: "./images/home-select.png",},
-  {title: "分类",path: "/list",icon: "../images/tabbar/list.png",selectIcon: "./images/list-select.png",},
-  {title: "购物车",path: "/car",icon: "../images/tabbar/cart.png",selectIcon: "./images/cart-select.png",},
-  {title: "我的",path: "/my",icon: "../images/tabbar/my.png",selectIcon: "./images/my-select.png",},
+  {title: "首页",path: "/home",icon: "../images/tabbar/home.png",selectIcon: "./images/tabbar/home-select.png",},
+  {title: "分类",path: "/list",icon: "../images/tabbar/list.png",selectIcon: "./images/tabbar/list-select.png",},
+  {title: "购物车",path: "/car",icon: "../images/tabbar/cart.png",selectIcon: "./images/tabbar/cart-select.png",},
+  {title: "我的",path: "/my",icon: "../images/tabbar/my.png",selectIcon: "./images/tabbar/my-select.png",},
 ])
 const switchItem = (path) => {
   router.replace(path)
