@@ -1,5 +1,10 @@
-<template><div>这是分类</div></template>
+<template>
+  <div>这是分类</div>
+  <TabBarVue></TabBarVue>
+</template>
 
-<script></script>
+<script setup>
+import TabBarVue from "@/components/TabBar.vue";
+</script>
 
 <style></style>
