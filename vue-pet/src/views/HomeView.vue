@@ -26,7 +26,7 @@
 <script setup>
 import Tabbar from "@/components/TabBar.vue";
 import Header from "@/components/home/Header.vue"
-import section1 from "@/components/home/section1.vue"
+import section1 from "@/components/home/section1/section1.vue"
 import { ref } from 'vue';
 import { Tab,Tabs } from 'vant';
 const active = ref(0);

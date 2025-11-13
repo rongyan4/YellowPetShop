@@ -5,11 +5,13 @@
         <img style="width:100%; height:100%" :src="image" />
       </swipe-item>
     </swipe>
-
+    <Favirate></Favirate>
   </div>
 </template>
 
 <script setup>
+  import Favirate from '@/components/home/section1/Favirate.vue';
+  
   import {Swipe, SwipeItem} from 'vant';
   import {ref, reactive} from 'vue';
   
