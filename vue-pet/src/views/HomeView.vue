@@ -27,8 +27,16 @@
 import Tabbar from "@/components/TabBar.vue";
 import Header from "@/components/home/Header.vue"
 import section1 from "@/components/home/section1/section1.vue"
-import { ref } from 'vue';
+import { onBeforeMount, ref } from 'vue';
 import { Tab,Tabs } from 'vant';
+import axios from 'axios';
+
+onBeforeMount(async() => {
+  let res = await({
+    url:'/api/home'
+  })
+})
+
 const active = ref(0);
 const tabList = ref([
   { type:1 , title:"推荐"},
