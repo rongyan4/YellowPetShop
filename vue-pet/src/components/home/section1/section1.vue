@@ -13,28 +13,21 @@
   import Recommend from '@/components/home/section1/Recommend.vue';
   
   import {Swipe, SwipeItem} from 'vant';
-  import {ref, reactive, onMounted} from 'vue';
-  import axios from 'axios';
-  
 //  const images = [
 //   "/images/banner/banner1.jpg",
 //   "/images/banner/banner2.jpg",
   
 // ];
+  import {ref, onMounted} from 'vue';
+  import { getSwipeImages } from '@/api/home';
 
 const SwipeImages = ref([]);
 
 const fetchSwipeImageUrl = async () => {
   try {
-    const response = await axios.get('/api/home/swipe')
-    const result = response.data;
-    
-    if (result.code === 200){
-      SwipeImages.value = result.data;
-      console.log(response.data);
-    }else{
-      
-    }
+    const result = await getSwipeImages();
+    SwipeImages.value = result.data;
+    console.log('轮播图数据:', result.data);
   } catch (error) {
     console.error('获取图片地址失败:', error);
   }
