@@ -123,6 +123,29 @@ export const del = (url, params = {}) => {
   });
 };
 
+/**
+ * 安全请求包装函数，自动处理错误，无需 try-catch
+ * @param {Promise} promise - 请求 Promise
+ * @param {*} defaultValue - 错误时的默认返回值，默认为 null
+ * @returns {Promise} 返回处理后的 Promise，成功返回数据，失败返回默认值
+ * 
+ * @example
+ * // 使用方式
+ * const result = await safeRequest(getSwipeImages());
+ * if (result) {
+ *   SwipeImages.value = result.data;
+ * }
+ */
+export const safeRequest = async (promise, defaultValue = null) => {
+  try {
+    const result = await promise;
+    return result;
+  } catch (error) {
+    // 错误已经在拦截器中处理并提示了，这里只返回默认值
+    return defaultValue;
+  }
+};
+
 // 导出 axios 实例，以便需要时直接使用
 export default service;
 

@@ -13,23 +13,16 @@
   import Recommend from '@/components/home/section1/Recommend.vue';
   
   import {Swipe, SwipeItem} from 'vant';
-//  const images = [
-//   "/images/banner/banner1.jpg",
-//   "/images/banner/banner2.jpg",
-  
-// ];
   import {ref, onMounted} from 'vue';
-  import { getSwipeImages } from '@/api/home';
+  import { getSwipeImagesSafe } from '@/api/home';
 
 const SwipeImages = ref([]);
 
 const fetchSwipeImageUrl = async () => {
-  try {
-    const result = await getSwipeImages();
+  const result = await getSwipeImagesSafe();
+  if (result) {
     SwipeImages.value = result.data;
     console.log('轮播图数据:', result.data);
-  } catch (error) {
-    console.error('获取图片地址失败:', error);
   }
 }
 
