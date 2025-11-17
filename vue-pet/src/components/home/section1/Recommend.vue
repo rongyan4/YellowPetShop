@@ -9,14 +9,14 @@
         <li v-for="(item, index) in recommendGoods" :key="index">
           <div class="img-box">
             <img :src="item.imgUrl" alt="商品图片" />
-            <p class="msg">{{ item.msg }}</p>
+            <p class="msg" v-if="item.msg">{{ item.msg }}</p>
           </div>
           <h3 class="title-text">{{ item.title }}</h3>
           <div class="price">
             <span>￥</span>{{ item.price }}
-            <span class="unit">/{{ item.unit }}</span>
+            <span class="unit" v-if="item.unit">/{{ item.unit }}</span>
           </div>
-          <div class="saled">已售 {{ item.saled }} 件</div>
+          <div class="saled" v-if="item.saled">已售 {{ item.saled }} 件</div>
         </li>
       </div>
     </div>
@@ -74,9 +74,8 @@ import { ref, onMounted } from 'vue';
 
   .content {
     .list {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: .2667rem;
+      column-count: 2; // 瀑布流：两列布局
+      column-gap: .2667rem; // 列间距
       padding: 0;
       margin: 0;
       list-style: none;
@@ -85,22 +84,29 @@ import { ref, onMounted } from 'vue';
         background: #fff;
         border-radius: .16rem;
         padding: .2667rem;
-        display: flex;
+        display: inline-flex; // 瀑布流必须使用 inline-flex 或 inline-block
         flex-direction: column;
-        // 高度随内容自适应
+        width: 100%; // 确保占满列宽
+        break-inside: avoid; // 防止商品被分割到两列
+        page-break-inside: avoid; // 兼容性
+        margin-bottom: .2667rem; // 商品之间的间距
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        height: auto; // 高度随内容自适应
+        box-sizing: border-box; // 确保 padding 包含在宽度内
 
         .img-box {
           position: relative;
           width: 100%;
           aspect-ratio: 1/1;
           margin-bottom: .2133rem;
+          flex-shrink: 0; // 图片区域不收缩
 
           img {
             width: 100%;
             height: 100%;
             object-fit: cover;
             border-radius: .1067rem;
+            display: block;
           }
 
           .msg {
@@ -122,17 +128,29 @@ import { ref, onMounted } from 'vue';
           margin: 0 0 .16rem 0;
           font-weight: 500;
           color: #333;
-          line-height: 1.3;
+          line-height: 1.4;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          word-break: break-word;
+          flex-shrink: 0;
         }
 
         .price {
+          display: flex;
+          align-items: baseline;
           font-size: .4267rem;
           color: #ff4d4f;
           margin: 0 0 .1333rem 0;
           font-weight: 600;
+          flex-shrink: 0;
 
           span:first-child {
             font-size: .3467rem;
+            margin-right: .0267rem;
           }
 
           .unit {

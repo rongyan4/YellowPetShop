@@ -5,7 +5,7 @@
         <img style="width:100%; height:100%" :src="image" />
       </swipe-item>
     </swipe>
-    <!-- <Recommend></Recommend> -->
+    <Recommend></Recommend>
   </div>
 </template>
 
