@@ -1,16 +1,18 @@
-const homeModel = require('../models/homeModel');
+const homeModel = require('../Models/homeModel');
+const { success, asyncHandler } = require('../utils/response');
 
-exports.getSwipe = (req, res, next) => {
-  try {
-    const data = homeModel.getSwipeData();
-    res.json({ 
-      code: 200,
-      data: data
-    }); 
-  } catch (error) { 
-    res.json({
-      code: 500,
-      msg: '获取Swipe失败'
-    });
-  }
-};
+/**
+ * 获取轮播图数据
+ */
+exports.getSwipe = asyncHandler(async (req, res) => {
+  const data = homeModel.getSwipeData();
+  success(res, data, '获取轮播图成功');
+});
+
+/**
+ * 获取推荐商品数据
+ */
+exports.getRecommend = asyncHandler(async (req, res) => {
+  const data = homeModel.getRecommendData();
+  success(res, data, '获取推荐商品成功');
+});

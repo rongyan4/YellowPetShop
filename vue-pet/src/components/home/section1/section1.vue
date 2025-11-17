@@ -19,10 +19,10 @@
 const SwipeImages = ref([]);
 
 const fetchSwipeImageUrl = async () => {
-  const result = await getSwipeImagesSafe();
-  if (result) {
-    SwipeImages.value = result.data;
-    console.log('轮播图数据:', result.data);
+  const data = await getSwipeImagesSafe();
+  if (data) {
+    SwipeImages.value = data;
+    console.log('轮播图数据:', data);
   }
 }
 

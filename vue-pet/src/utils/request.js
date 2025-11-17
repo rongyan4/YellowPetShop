@@ -34,11 +34,11 @@ service.interceptors.response.use(
     const res = response.data;
     
     // 如果返回的状态码为 200，说明接口请求成功
-    if (res.code === 200) {
+    if (res && res.code === 200) {
       return res;
     } else {
       // 如果返回的状态码不是 200，说明有错误
-      const errorMsg = res.msg || '请求失败';
+      const errorMsg = res?.msg || '请求失败';
       showToast({
         message: errorMsg,
         type: 'fail'
@@ -127,7 +127,7 @@ export const del = (url, params = {}) => {
  * 安全请求包装函数，自动处理错误，无需 try-catch
  * @param {Promise} promise - 请求 Promise
  * @param {*} defaultValue - 错误时的默认返回值，默认为 null
- * @returns {Promise} 返回处理后的 Promise，成功返回数据，失败返回默认值
+ * @returns {Promise} 返回处理后的 Promise，成功返回响应对象，失败返回默认值
  * 
  * @example
  * // 使用方式
@@ -139,6 +139,34 @@ export const del = (url, params = {}) => {
 export const safeRequest = async (promise, defaultValue = null) => {
   try {
     const result = await promise;
+    return result;
+  } catch (error) {
+    // 错误已经在拦截器中处理并提示了，这里只返回默认值
+    return defaultValue;
+  }
+};
+
+/**
+ * 安全请求并提取数据
+ * 自动处理错误并提取响应数据，无需手动提取 data 字段
+ * @param {Promise} promise - 请求 Promise
+ * @param {*} defaultValue - 错误时的默认返回值，默认为 null
+ * @returns {Promise} 返回处理后的 Promise，成功返回提取的数据，失败返回默认值
+ * 
+ * @example
+ * // 使用方式
+ * const data = await safeRequestData(getSwipeImages());
+ * if (data) {
+ *   SwipeImages.value = data;
+ * }
+ */
+export const safeRequestData = async (promise, defaultValue = null) => {
+  try {
+    const result = await promise;
+    // 提取响应数据
+    if (result && result.data !== undefined) {
+      return result.data;
+    }
     return result;
   } catch (error) {
     // 错误已经在拦截器中处理并提示了，这里只返回默认值

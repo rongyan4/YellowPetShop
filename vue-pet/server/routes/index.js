@@ -8,6 +8,8 @@ router.get("/", function (req, res, next) {
   res.render("index", { title: "Express" });
 });
 
-router.get("/api/home/swipe", homeController.getSwipe);
+// API 路由
+router.get("/home/swipe", homeController.getSwipe);
+router.get("/home/recommend", homeController.getRecommend);
 
 module.exports = router;
