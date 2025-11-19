@@ -1,7 +1,7 @@
 <template>
   <div class="user-info-bar">
     <div class="user-avatar">
-      <img :src="userInfo.avatar || '/images/default-avatar.png'" alt="用户头像" />
+      <img src="/images/touxiang.jpg" alt="用户头像" />
       <span class="level-badge" v-if="userInfo.level">{{ userInfo.level }}</span>
     </div>
     <div class="user-details">
@@ -67,10 +67,14 @@ const levelProgress = computed(() => {
 
   .user-avatar {
     position: relative;
-    width: 1.3333rem;
-    height: 1.3333rem;
+    width: 64px;
+    height: 64px;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0;
     margin-right: .2667rem;
     flex-shrink: 0;
+    box-sizing: border-box; 
 
     img {
       width: 100%;
@@ -78,12 +82,16 @@ const levelProgress = computed(() => {
       border-radius: 50%;
       object-fit: cover;
       border: 2px solid #fff;
+      min-width: 100%;
+      min-height: 100%;
+      box-sizing: border-box;
+      display: block;
     }
 
     .level-badge {
       position: absolute;
-      bottom: -0.1333rem;
-      right: -0.1333rem;
+      bottom: -4px;
+      right: -4px;
       background: #4CAF50;
       color: #fff;
       font-size: .24rem;

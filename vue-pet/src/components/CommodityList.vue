@@ -13,6 +13,7 @@
         </div>
         <div class="saled" v-if="item.saled">已售 {{ item.saled }} 件</div>
       </li>
+      <span class="no-more">没有更多内容啦~</span>
     </div>
   </div>
 </template>
@@ -28,6 +29,10 @@ defineProps({
 
 <style lang="scss" scoped>
 .commodity-list {
+  height: calc(100vh - 2.2rem); // 视口高度减去 tabbar 高度
+  overflow-y: auto; // 内容超出时可滚动
+  padding-bottom: .2667rem; // 底部留出一些间距
+
   .list {
     column-count: 2; // 瀑布流：两列布局
     column-gap: .2667rem; // 列间距
@@ -122,6 +127,16 @@ defineProps({
         margin: 0;
         margin-top: auto; // 推到容器底部
       }
+    }
+
+    .no-more {
+      display: block;
+      column-span: all; // 跨越所有列
+      text-align: center;
+      font-size: .32rem;
+      color: #999;
+      padding: .5333rem 0;
+      margin-top: .2667rem;
     }
   }
 }

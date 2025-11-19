@@ -37,6 +37,8 @@ import FeatureButtons from '@/components/home/FeatureButtons.vue';
 import { Swipe, SwipeItem } from 'vant';
 import { ref, onMounted } from 'vue';
 import { getSwipeImagesSafe } from '@/api/home';
+import { useRouter } from 'vue-router';
+const router = useRouter(); 
 
 const SwipeImages = ref([]);
 const bannerImages = ref([
@@ -135,7 +137,7 @@ onMounted(fetchSwipeImageUrl);
   }
 
   .service-buttons-wrapper {
-    margin-top: 1.2rem; // 为用户信息条的下半部分留出空间
+    margin-top: 1.5rem; // 为用户信息条的下半部分留出空间
   }
 
   .image-boxes {

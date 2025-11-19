@@ -34,8 +34,8 @@ const props = defineProps({
 });
 
 const handleServiceClick = (type) => {
-  emit('service-click', type);
-};
+    router.push(`/home?type=${type}`);
+}
 </script>
 
 <style lang="scss" scoped>
