@@ -3,15 +3,15 @@
     <div class="list">
       <li v-for="(item, index) in goods" :key="index">
         <div class="img-box">
-          <img :src="item.imgUrl" alt="商品图片" />
+          <img :src="item.mainPicUrl" alt="商品图片" />
           <p class="msg" v-if="item.msg">{{ item.msg }}</p>
         </div>
-        <h3 class="title-text">{{ item.title }}</h3>
+        <h3 class="title-text">{{ item.name }}</h3>
         <div class="price">
           <span>￥</span>{{ item.price }}
           <span class="unit" v-if="item.unit">/{{ item.unit }}</span>
         </div>
-        <div class="saled" v-if="item.saled">已售 {{ item.saled }} 件</div>
+        <div class="saled" v-if="item.sold">已售 {{ item.sold }} 件</div>
       </li>
       <span class="no-more">没有更多内容啦~</span>
     </div>
@@ -29,9 +29,6 @@ defineProps({
 
 <style lang="scss" scoped>
 .commodity-list {
-  height: calc(100vh - 2.2rem); // 视口高度减去 tabbar 高度
-  overflow-y: auto; // 内容超出时可滚动
-  padding-bottom: .2667rem; // 底部留出一些间距
 
   .list {
     column-count: 2; // 瀑布流：两列布局

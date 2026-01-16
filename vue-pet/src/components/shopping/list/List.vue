@@ -48,21 +48,18 @@
         </div>
       </div>
     </div>
-    <TabBarVue></TabBarVue>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, nextTick } from 'vue';
-import TabBarVue from '@/components/TabBar.vue';
 import { getCategoryListSafe, getGoodsByCategorySafe } from '@/api/list';
 
 const activeCategory = ref(0);
 const goodsContainerRef = ref(null);
 const categories = ref([]);
-const isScrolling = ref(false); // 防止滚动时触发点击事件
+const isScrolling = ref(false);
 
-// 生成模拟数据（用于开发测试）
 const generateMockData = () => {
   const mockCategories = [
     { name: '全部分类', pinyin: 'qbfl' },
@@ -90,28 +87,20 @@ const generateMockData = () => {
   }));
 };
 
-// 获取分类数据
 const fetchCategories = async () => {
   const data = await getCategoryListSafe();
   if (data && Array.isArray(data) && data.length > 0) {
-    // 确保每个分类都有拼音简写字段
     categories.value = data.map(category => ({
       ...category,
-      pinyin: category.pinyin || category.name // 如果没有拼音，使用名称
+      pinyin: category.pinyin || category.name
     }));
   } else {
-    // 如果没有数据，使用模拟数据
     categories.value = generateMockData();
   }
-  console.log('分类数据:', categories.value);
-  
-  // 为每个分类请求对应的商品数据
   await fetchGoodsForCategories();
 };
 
-// 为每个分类获取商品数据
 const fetchGoodsForCategories = async () => {
-  // 并行请求所有分类的商品数据
   const goodsPromises = categories.value.map((category, index) => {
     if (category.pinyin) {
       return getGoodsByCategorySafe(category.pinyin).then(goods => ({
@@ -123,8 +112,6 @@ const fetchGoodsForCategories = async () => {
   });
   
   const results = await Promise.all(goodsPromises);
-  
-  // 更新每个分类的商品数据
   results.forEach(({ index, goods }) => {
     if (categories.value[index] && goods.length > 0) {
       categories.value[index].goods = goods;
@@ -132,7 +119,6 @@ const fetchGoodsForCategories = async () => {
   });
 };
 
-// 分类切换事件
 const onCategoryChange = async (index) => {
   if (isScrolling.value) return;
   
@@ -150,14 +136,12 @@ const onCategoryChange = async (index) => {
       behavior: 'smooth'
     });
     
-    // 滚动完成后重置标志
     setTimeout(() => {
       isScrolling.value = false;
     }, 500);
   }
 };
 
-// 滚动事件处理
 const onScroll = () => {
   if (isScrolling.value) return;
   
@@ -165,9 +149,7 @@ const onScroll = () => {
   if (!container) return;
   
   const scrollTop = container.scrollTop;
-  const containerHeight = container.clientHeight;
   
-  // 遍历所有分类区域，找到当前可见的分类
   const categoryElements = categories.value.map((_, index) => {
     const element = document.getElementById(`category-${index}`);
     if (element) {
@@ -182,7 +164,6 @@ const onScroll = () => {
     return null;
   }).filter(Boolean);
   
-  // 找到当前滚动位置对应的分类
   for (let i = 0; i < categoryElements.length; i++) {
     const current = categoryElements[i];
     const next = categoryElements[i + 1];
@@ -199,23 +180,19 @@ const onScroll = () => {
   }
 };
 
-// 商品点击事件
 const handleGoodsClick = (item) => {
   console.log('点击商品:', item);
-  // 这里可以添加跳转到商品详情页的逻辑
 };
 
 onMounted(() => {
-  // 立即加载模拟数据，确保组件能显示
   categories.value = generateMockData();
-  // 然后尝试获取真实数据
   fetchCategories();
 });
 </script>
 
 <style lang="scss" scoped>
 .list-view {
-  height: calc(100vh - 2.2rem); // 视口高度减去 tabbar 高度
+  height: 100%;
   display: flex;
   flex-direction: column;
   background-color: #f7f7f7;
@@ -230,7 +207,7 @@ onMounted(() => {
 }
 
 .category-sidebar {
-  width: 2.1333rem; // 约 80px
+  width: 2.1333rem;
   background-color: #f8f8f8;
   overflow-y: auto;
   flex-shrink: 0;

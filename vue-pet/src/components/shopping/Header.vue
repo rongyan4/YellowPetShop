@@ -32,7 +32,7 @@
   .top-bar-input{
     align-items: center;
     background-color: #fff;
-    border-radius: 500px;
+    border-radius: 13.3333rem;
     display: flex;
     height: 1rem;
     padding: 0 .4rem;

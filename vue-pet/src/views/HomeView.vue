@@ -1,53 +1,86 @@
 <template>
-  <div class="home">
-    <Header></Header>
-    <div class="content">
-      <tabs v-model:active="active">
-        <tab 
-        v-for="(item, index) in tabList" 
-        :title="item.title"
-        :key="item.type">
-          <div v-if="active === 0">
-            <section1></section1>
-          </div>
-          <div v-if="active === 1">
-            内容2
-          </div>
-          <div v-if="active === 2">
-            内容3
-          </div>
-        </tab>
-      </tabs>
-    <Tabbar></Tabbar>
+  <div class="new-home">
+    <div class="home-content">
+      <Home :isLoggedIn="isLoggedIn" :userInfo="userInfo"></Home>
     </div>
+    <Tabbar></Tabbar>
   </div>
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import Home from "@/components/home/Home.vue";
 import Tabbar from "@/components/TabBar.vue";
-import Header from "@/components/home/Header.vue"
-import section1 from "@/components/home/section1/section1.vue"
-import { onBeforeMount, ref } from 'vue';
-import { Tab,Tabs } from 'vant';
-import axios from 'axios';
+import { getToken, parseJWT, isAuthenticated } from '@/utils/auth';
 
-onBeforeMount(async() => {
-  let res = await({
-    url:'/api/home'
-  })
-})
+const router = useRouter();
+const isLoggedIn = ref(false);
+const userInfo = ref({
+  avatar: '/images/touxiang.jpg',
+  username: '请登录',
+  level: '',
+  currentPoints: 0,
+  nextLevelPoints: 0,
+  nextLevel: '',
+  points: '-',
+  coupons: '-'
+});
 
-const active = ref(0);
-const tabList = ref([
-  { type:1 , title:"推荐"},
-  { type:2 , title:"推荐"},
-  { type:3 , title:"推荐"},
-])
-
+onMounted(() => {
+  // 检查登录状态
+  const token = getToken();
+  
+  if (token && isAuthenticated()) {
+    isLoggedIn.value = true;
+    
+    // 解析token获取用户信息
+    const payload = parseJWT(token);
+    if (payload) {
+      console.log('=== NewHome 加载 - Token信息 ===');
+      console.log('Token:', token);
+      console.log('Username:', payload.username);
+      console.log('============================');
+      
+      // 更新用户信息
+      userInfo.value = {
+        avatar: '/images/touxiang.jpg', // 可以从后端获取
+        username: payload.username || '用户',
+        level: 'S1',
+        currentPoints: 0,
+        nextLevelPoints: 3,
+        nextLevel: 'S2',
+        points: 0,
+        coupons: 0
+      };
+    }
+  } else {
+    console.log('未登录状态');
+    isLoggedIn.value = false;
+    // 未登录时的默认信息
+    userInfo.value = {
+      avatar: '/images/touxiang.jpg',
+      username: '请登录',
+      level: '',
+      currentPoints: 0,
+      nextLevelPoints: 0,
+      nextLevel: '',
+      points: '-',
+      coupons: '-'
+    };
+  }
+});
 </script>
 
-<style>
-.content{
-  margin-top: 2rem;
+<style lang="scss" scoped>
+.new-home {
+  background: #f7f5f0;
+  min-height: 100vh;
+  padding-bottom: 1.6rem;
+
+  .home-content {
+    width: 100%;
+  }
 }
 </style>
+

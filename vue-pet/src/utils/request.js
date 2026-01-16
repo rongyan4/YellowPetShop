@@ -3,22 +3,25 @@ import { showToast } from 'vant';
 
 // 创建 axios 实例
 const service = axios.create({
-  baseURL: '/api', // API 基础路径
+  baseURL: '/api/', // API 基础路径
   timeout: 10000, // 请求超时时间
   headers: {
     'Content-Type': 'application/json;charset=UTF-8'
   }
 });
 
-// 请求拦截器
+// 请求拦截器 - JWT Token 处理
 service.interceptors.request.use(
   config => {
-    // 在发送请求之前做些什么
-    // 可以在这里添加 token 等认证信息
-    // const token = localStorage.getItem('token');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    // 从 localStorage 获取 token
+    const token = localStorage.getItem('token');
+    
+    // 如果 token 存在，添加到请求头
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
+    // 可以在这里添加其他请求头信息
     return config;
   },
   error => {
@@ -58,8 +61,14 @@ service.interceptors.response.use(
           errorMsg = '请求参数错误';
           break;
         case 401:
-          errorMsg = '未授权，请重新登录';
-          // 可以在这里处理登录跳转
+          errorMsg = '登录已过期，请重新登录';
+          // 清除本地存储的 token 和用户信息
+          localStorage.removeItem('token');
+          localStorage.removeItem('userInfo');
+          // 跳转到登录页面
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 1500);
           break;
         case 403:
           errorMsg = '拒绝访问';

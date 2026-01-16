@@ -5,6 +5,8 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import static com.baomidou.mybatisplus.extension.spi.SpringCompatibleSet.applicationContext;
+
 @SpringBootApplication
 @MapperScan("com.yellow.petshop.mapper")
 public class PetserverApplication {

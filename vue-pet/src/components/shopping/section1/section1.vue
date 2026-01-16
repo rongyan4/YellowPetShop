@@ -10,7 +10,7 @@
 </template>
 
 <script setup>
-  import Recommend from '@/components/home/section1/Recommend.vue';
+  import Recommend from '@/components/shopping/section1/Recommend.vue';
   
   import {Swipe, SwipeItem} from 'vant';
   import {ref, onMounted} from 'vue';
@@ -20,10 +20,6 @@ const SwipeImages = ref([]);
 
 const fetchSwipeImageUrl = async () => {
   const data = await getSwipeImagesSafe();
-  if (data) {
-    SwipeImages.value = data;
-    console.log('轮播图数据:', data);
-  }
 }
 
 onMounted(fetchSwipeImageUrl)

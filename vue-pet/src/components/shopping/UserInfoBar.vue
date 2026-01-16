@@ -1,12 +1,12 @@
 <template>
   <div class="user-info-bar">
     <div class="user-avatar">
-      <img src="/images/touxiang.jpg" alt="用户头像" />
+      <img :src="userInfo.avatar || '/images/touxiang.jpg'" alt="用户头像" />
       <span class="level-badge" v-if="userInfo.level">{{ userInfo.level }}</span>
     </div>
     <div class="user-details">
       <div class="username">{{ userInfo.username || '未登录' }}</div>
-      <div class="level-progress">
+      <div class="level-progress" v-if="userInfo.level && userInfo.nextLevelPoints > 0">
         <div class="progress-bar">
           <div class="progress-fill" :style="{ width: levelProgress + '%' }"></div>
         </div>
@@ -15,11 +15,11 @@
     </div>
     <div class="user-stats">
       <div class="stat-item">
-        <span class="stat-value">{{ userInfo.points || 0 }}</span>
+        <span class="stat-value">{{ userInfo.points }}</span>
         <span class="stat-label">葫芦</span>
       </div>
       <div class="stat-item">
-        <span class="stat-value">{{ userInfo.coupons || 0 }}</span>
+        <span class="stat-value">{{ userInfo.coupons }}</span>
         <span class="stat-label">优惠券</span>
       </div>
     </div>
@@ -33,7 +33,7 @@ const props = defineProps({
   userInfo: {
     type: Object,
     default: () => ({
-      avatar: '',
+      avatar: '/images/touxiang.jpg',
       username: '用户',
       level: 'S1',
       currentPoints: 0,
@@ -67,12 +67,12 @@ const levelProgress = computed(() => {
 
   .user-avatar {
     position: relative;
-    width: 64px;
-    height: 64px;
-    min-width: 32px;
-    min-height: 32px;
+    width: 1.7067rem;  /* 64px -> rem */
+    height: 1.7067rem; /* 64px -> rem */
+    min-width: 1.7067rem;
+    min-height: 1.7067rem;
     padding: 0;
-    margin-right: .2667rem;
+    margin-right: .4rem;
     flex-shrink: 0;
     box-sizing: border-box; 
 
@@ -81,7 +81,7 @@ const levelProgress = computed(() => {
       height: 100%;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid #fff;
+      border: .0533rem solid #fff; /* 2px -> rem */
       min-width: 100%;
       min-height: 100%;
       box-sizing: border-box;
@@ -90,15 +90,16 @@ const levelProgress = computed(() => {
 
     .level-badge {
       position: absolute;
-      bottom: -4px;
-      right: -4px;
+      bottom: -.1067rem; /* -4px -> rem */
+      right: -.1067rem;  /* -4px -> rem */
       background: #4CAF50;
       color: #fff;
-      font-size: .24rem;
-      padding: 0.04rem 0.1333rem;
-      border-radius: 0.1333rem;
-      border: 2px solid #fff;
+      font-size: .32rem;
+      padding: .0533rem .16rem;
+      border-radius: .1333rem;
+      border: .0533rem solid #fff; /* 2px -> rem */
       font-weight: 600;
+      line-height: 1;
     }
   }
 
@@ -107,7 +108,7 @@ const levelProgress = computed(() => {
     min-width: 0;
 
     .username {
-      font-size: .3733rem;
+      font-size: .4267rem;
       font-weight: 600;
       color: #333;
       margin-bottom: .1333rem;
@@ -123,31 +124,33 @@ const levelProgress = computed(() => {
 
       .progress-bar {
         flex: 1;
-        height: .2667rem;
+        height: .32rem;
         background: #f0f0f0;
-        border-radius: .1333rem;
+        border-radius: .16rem;
         overflow: hidden;
+        min-width: 2rem;
 
         .progress-fill {
           height: 100%;
           background: linear-gradient(90deg, #FFD700, #FFA500);
-          border-radius: .1333rem;
+          border-radius: .16rem;
           transition: width 0.3s ease;
         }
       }
 
       .progress-text {
-        font-size: .2667rem;
+        font-size: .2933rem;
         color: #666;
         white-space: nowrap;
+        flex-shrink: 0;
       }
     }
   }
 
   .user-stats {
     display: flex;
-    gap: .4rem;
-    margin-left: .2667rem;
+    gap: .5333rem;
+    margin-left: .4rem;
     flex-shrink: 0;
 
     .stat-item {
@@ -157,14 +160,16 @@ const levelProgress = computed(() => {
       gap: .0533rem;
 
       .stat-value {
-        font-size: .4267rem;
+        font-size: .48rem;
         font-weight: 600;
         color: #333;
+        line-height: 1.2;
       }
 
       .stat-label {
-        font-size: .2667rem;
+        font-size: .2933rem;
         color: #999;
+        line-height: 1;
       }
     }
   }
