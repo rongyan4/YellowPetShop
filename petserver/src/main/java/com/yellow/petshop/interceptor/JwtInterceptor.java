@@ -54,6 +54,7 @@ public class JwtInterceptor implements HandlerInterceptor {
 
             // 提取用户ID并存储到请求属性中，供后续Controller使用
             Long userId = jwtUtil.extractUserId(token);
+            String username = jwtUtil.extractusername(token);
             request.setAttribute("userId", userId);
             
             // Token验证通过，继续处理请求

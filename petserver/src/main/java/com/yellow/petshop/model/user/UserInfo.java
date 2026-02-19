@@ -17,10 +17,11 @@ public class UserInfo {
     @TableId(type = IdType.AUTO)
     private Long id;
     private String username;
-    private String password;
     private String email;
     private String nickname;
+    private String gender;
     private String avatar;
     private String status;
     private String role;
+    private String birthday;
 }

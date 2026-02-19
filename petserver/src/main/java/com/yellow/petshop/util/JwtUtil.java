@@ -38,6 +38,22 @@ public class JwtUtil {
         return Long.parseLong(claims.getSubject());
     }
 
+    //提取用户名
+    public String extractusername(String token) {
+        Claims claims = extractClaims(token);
+        return claims.get("username", String.class);
+    }
+    
+    // 静态方法：从Token中获取用户ID（用于Controller）
+    public static Long getUserIdFromToken(String token) {
+        try {
+            JwtUtil jwtUtil = new JwtUtil();
+            return jwtUtil.extractUserId(token);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     // 验证Token是否有效（未过期 + 签名正确）
     public boolean validateToken(String token) {
         try {

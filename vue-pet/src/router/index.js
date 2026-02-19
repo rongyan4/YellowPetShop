@@ -1,6 +1,4 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { isAuthenticated } from "@/utils/auth";
-import { showToast } from "vant";
 
 const routes = [
   {
@@ -11,12 +9,18 @@ const routes = [
   },
   {
     path:"/",
-    redirect: '/newhome'
+    redirect: '/home'
   },
   {
-    path: "/newhome",
-    name: "newhome",
+    path: "/home",
+    name: "home",
     component: () => import("../views/HomeView.vue"),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: "/shopping",
+    name: "shopping",
+    component: () => import("../views/ShoppingView.vue"),
     meta: { requiresAuth: false }
   },
   {
@@ -24,21 +28,98 @@ const routes = [
     name: "car",
     component: () =>
       import("../views/CarView.vue"),
-    meta: { requiresAuth: true } // 购物车需要登录
+    meta: { requiresAuth: false } // 购物车页面自己处理登录弹窗
   },
   {
     path: "/my",
     name: "my",
     component: () =>
       import("../views/MyView.vue"),
-    meta: { requiresAuth: true } // 个人中心需要登录
+    meta: { requiresAuth: false } // 个人中心页面自己处理登录弹窗
   },
   {
-    path: "/login",
-    name: "login",
+    path: "/profile",
+    name: "profile",
     component: () =>
-      import( "../views/LoginView.vue"),
+      import("../views/ProfileView.vue"),
     meta: { requiresAuth: false }
+  },
+  {
+    path: "/account-manage",
+    name: "account-manage",
+    component: () =>
+      import("../views/AccountManageView.vue"),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: "/good",
+    name: "good",
+    component: () =>
+      import("../views/GoodDetailsView.vue"),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: "/good-details",
+    name: "good-details",
+    component: () =>
+      import("../views/GoodDetailsView.vue"),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: "/order/confirm",
+    name: "order-confirm",
+    component: () =>
+      import("../views/OrderConfirmView.vue"),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: "/order/list",
+    name: "order-list",
+    component: () =>
+      import("../views/OrderListView.vue"),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: "/my-orders",
+    name: "my-orders",
+    component: () =>
+      import("../views/MyOrdersView.vue"),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: "/my-favorites",
+    name: "my-favorites",
+    component: () =>
+      import("../views/MyFavoritesView.vue"),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: "/browse-history",
+    name: "browse-history",
+    component: () =>
+      import("../views/BrowseHistoryView.vue"),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: "/order/detail/:id",
+    name: "order-detail",
+    component: () =>
+      import("../views/OrderDetailView.vue"),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: "/address/list",
+    name: "address-list",
+    component: () =>
+      import("../views/AddressListView.vue"),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: "/address/edit",
+    name: "address-edit",
+    component: () =>
+      import("../views/AddressEditView.vue"),
+    meta: { requiresAuth: true }
   },
 ];
 
@@ -47,29 +128,10 @@ const router = createRouter({
   routes,
 });
 
-// 路由守卫 - JWT认证拦截
+// 路由守卫 - 已移除强制跳转登录页的逻辑
+// 购物车和个人中心页面会自己处理登录弹窗
 router.beforeEach((to, from, next) => {
-  // 检查路由是否需要认证
-  if (to.meta.requiresAuth) {
-    // 检查用户是否已登录
-    if (isAuthenticated()) {
-      // 已登录，允许访问
-      next();
-    } else {
-      // 未登录，跳转到登录页
-      showToast({
-        message: '请先登录',
-        type: 'fail'
-      });
-      next({
-        path: '/login',
-        query: { redirect: to.fullPath } // 保存目标路由，登录后可以跳转回来
-      });
-    }
-  } else {
-    // 不需要认证的路由，直接放行
-    next();
-  }
+  next();
 });
 
 export default router;

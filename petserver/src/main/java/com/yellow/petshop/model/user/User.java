@@ -20,7 +20,9 @@ public class User {
     private String password;
     private String email;
     private String nickname;
+    private String gender;
     private String avatar;
     private String status;
     private String role;
+    private String birthday;
 }

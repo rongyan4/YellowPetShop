@@ -11,4 +11,9 @@ public class BCryptUtil {
     public static boolean verify(String rawPassword, String encryptedPassword) {
         return BCrypt.checkpw(rawPassword, encryptedPassword);
     }
+    
+    // 检查密码（别名方法）
+    public static boolean checkPassword(String rawPassword, String encryptedPassword) {
+        return verify(rawPassword, encryptedPassword);
+    }
 }

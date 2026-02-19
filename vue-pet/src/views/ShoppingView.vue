@@ -1,21 +1,23 @@
 <template>
   <div class="shopping">
-    <Header></Header>
+    <Header 
+      ref="headerRef"
+      @switchToSearch="handleSwitchToSearch"
+      @search="handleSearch"
+    ></Header>
     <div class="content">
       <tabs v-model:active="active">
-        <tab 
-        v-for="(item, index) in tabList" 
-        :title="item.title"
-        :key="item.type">
-          <div v-if="active === 0">
-            <section1></section1>
-          </div>
-          <div v-if="active === 1">
-            <List></List>
-          </div>
-          <div v-if="active === 2">
-            内容3
-          </div>
+        <tab title="推荐">
+          <section1></section1>
+        </tab>
+        <tab title="分类">
+          <List></List>
+        </tab>
+        <tab title="搜索">
+          <Search 
+            ref="searchRef"
+            @tagClick="handleTagClick"
+          ></Search>
         </tab>
       </tabs>
     <Tabbar></Tabbar>
@@ -28,7 +30,8 @@ import Tabbar from "@/components/TabBar.vue";
 import Header from "@/components/shopping/Header.vue"
 import section1 from "@/components/shopping/section1/section1.vue"
 import List from "@/components/shopping/list/List.vue"
-import { onBeforeMount, onMounted, ref } from 'vue';
+import Search from "@/components/shopping/search/Search.vue"
+import { onBeforeMount, onMounted, ref, nextTick } from 'vue';
 import { Tab,Tabs } from 'vant';
 import axios from 'axios';
 import { getToken, parseJWT } from '@/utils/auth';
@@ -64,11 +67,58 @@ onMounted(() => {
 });
 
 const active = ref(0);
-const tabList = ref([
-  { type:1 , title:"推荐"},
-  { type:2 , title:"分类"},
-  { type:3 , title:"推荐"},
-])
+
+const headerRef = ref(null);
+const searchRef = ref(null);
+
+// 切换到搜索标签
+const handleSwitchToSearch = async () => {
+  console.log('切换到搜索标签');
+  active.value = 2;
+  // 切换到搜索标签时，如果搜索框为空，重置搜索状态显示历史记录
+  await nextTick();
+  if (searchRef.value && headerRef.value) {
+    const keyword = headerRef.value.searchKeyword;
+    console.log('当前搜索关键词:', keyword);
+    if (!keyword || !keyword.trim()) {
+      // 安全调用 resetSearch
+      if (typeof searchRef.value.resetSearch === 'function') {
+        console.log('重置搜索状态');
+        searchRef.value.resetSearch();
+      }
+    }
+  }
+};
+
+// 执行搜索
+const handleSearch = async (keyword) => {
+  console.log('ShoppingView 收到搜索请求:', keyword);
+  // 确保在搜索标签页
+  if (active.value !== 2) {
+    console.log('切换到搜索标签页');
+    active.value = 2;
+    // 等待 DOM 更新，确保 Search 组件已渲染
+    await nextTick();
+  }
+  
+  // 调用搜索组件的搜索方法
+  if (searchRef.value && typeof searchRef.value.performSearch === 'function') {
+    console.log('调用 Search 组件的 performSearch 方法');
+    searchRef.value.performSearch(keyword);
+  } else {
+    console.error('Search 组件未就绪, searchRef.value:', searchRef.value);
+  }
+};
+
+// 点击搜索标签
+const handleTagClick = (tag) => {
+  // 将标签内容设置到搜索框
+  if (headerRef.value) {
+    headerRef.value.setSearchKeyword(tag);
+  }
+  // 执行搜索
+  handleSearch(tag);
+};
 
 </script>
 

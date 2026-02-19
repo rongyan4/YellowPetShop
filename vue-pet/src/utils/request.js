@@ -1,24 +1,47 @@
 import axios from 'axios';
 import { showToast } from 'vant';
 
+// 全局请求计数器
+let globalRequestCounter = 0;
+
 // 创建 axios 实例
 const service = axios.create({
   baseURL: '/api/', // API 基础路径
   timeout: 10000, // 请求超时时间
   headers: {
-    'Content-Type': 'application/json;charset=UTF-8'
+    'Content-Type': 'application/json;charset=UTF-8',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache'
   }
 });
 
 // 请求拦截器 - JWT Token 处理
 service.interceptors.request.use(
   config => {
+    const requestId = ++globalRequestCounter;
+    config.headers['X-Request-ID'] = requestId;
+    
+    console.log('=== 发送请求 [#' + requestId + '] ===');
+    console.log('URL:', config.url);
+    console.log('Method:', config.method);
+    console.log('Data:', config.data);
+    console.log('Timestamp:', new Date().toISOString());
+    
     // 从 localStorage 获取 token
     const token = localStorage.getItem('token');
     
     // 如果 token 存在，添加到请求头
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    
+    // 添加时间戳防止缓存
+    config.headers['X-Request-Time'] = Date.now();
+    
+    // 禁用缓存
+    if (config.method === 'post' || config.method === 'put') {
+      config.headers['Cache-Control'] = 'no-cache';
+      config.headers['Pragma'] = 'no-cache';
     }
     
     // 可以在这里添加其他请求头信息
@@ -35,24 +58,33 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   response => {
     const res = response.data;
+    const requestId = response.config.headers['X-Request-ID'];
     
-    // 如果返回的状态码为 200，说明接口请求成功
-    if (res && res.code === 200) {
-      return res;
-    } else {
-      // 如果返回的状态码不是 200，说明有错误
-      const errorMsg = res?.msg || '请求失败';
-      showToast({
-        message: errorMsg,
-        type: 'fail'
-      });
-      return Promise.reject(new Error(errorMsg));
+    console.log('=== 收到响应 [#' + requestId + '] ===');
+    console.log('URL:', response.config.url);
+    console.log('Status:', response.status);
+    console.log('Response:', res);
+    console.log('Timestamp:', new Date().toISOString());
+    
+    // 如果后端返回的 code 不是 200，视为业务错误
+    if (res.code && res.code !== 200) {
+      console.error('业务错误 [#' + requestId + ']:', res);
+      console.error('错误时间:', new Date().toISOString());
+      // 抛出错误，让 catch 块捕获
+      const error = new Error(res.msg || '请求失败');
+      error.response = { data: res };
+      return Promise.reject(error);
     }
+    
+    // 直接返回响应数据，让业务代码自己处理不同的 code
+    // 这样可以根据具体业务需求决定是否显示错误提示
+    return res;
   },
   error => {
     // 对响应错误做点什么
     console.error('响应错误:', error);
     let errorMsg = '网络错误，请稍后重试';
+    let shouldShowToast = true;
     
     if (error.response) {
       // 服务器返回了错误状态码
@@ -61,14 +93,12 @@ service.interceptors.response.use(
           errorMsg = '请求参数错误';
           break;
         case 401:
-          errorMsg = '登录已过期，请重新登录';
           // 清除本地存储的 token 和用户信息
           localStorage.removeItem('token');
           localStorage.removeItem('userInfo');
-          // 跳转到登录页面
-          setTimeout(() => {
-            window.location.href = '/login';
-          }, 1500);
+          // 不显示"登录已过期"的提示，让各个页面自己处理登录逻辑
+          // 购物页面等不需要登录的页面不会受到影响
+          shouldShowToast = false;
           break;
         case 403:
           errorMsg = '拒绝访问';
@@ -87,10 +117,13 @@ service.interceptors.response.use(
       errorMsg = '网络连接失败，请检查网络';
     }
     
-    showToast({
-      message: errorMsg,
-      type: 'fail'
-    });
+    // 只在需要时显示提示
+    if (shouldShowToast) {
+      showToast({
+        message: errorMsg,
+        type: 'fail'
+      });
+    }
     
     return Promise.reject(error);
   }
@@ -106,11 +139,12 @@ export const get = (url, params = {}) => {
 };
 
 // 封装 POST 请求
-export const post = (url, data = {}) => {
+export const post = (url, data = {}, config = {}) => {
   return service({
     method: 'post',
     url,
-    data
+    data,
+    ...config
   });
 };
 

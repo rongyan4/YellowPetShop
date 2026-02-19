@@ -23,8 +23,8 @@ import { ref } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 const router = useRouter()
 const tabbarList = ref([
-  {title: "首页",path: "/newhome",icon: "/images/tabbar/home.png",selectIcon: "/images/tabbar/home-select.png",},
-  {title: "购物",path: "/home",icon: "/images/tabbar/list.png",selectIcon: "/images/tabbar/list-select.png",},
+  {title: "首页",path: "/home",icon: "/images/tabbar/home.png",selectIcon: "/images/tabbar/home-select.png",},
+  {title: "购物",path: "/shopping",icon: "/images/tabbar/list.png",selectIcon: "/images/tabbar/list-select.png",},
   {title: "购物车",path: "/car",icon: "/images/tabbar/cart.png",selectIcon: "/images/tabbar/cart-select.png",},
   {title: "我的",path: "/my",icon: "/images/tabbar/my.png",selectIcon: "/images/tabbar/my-select.png",},
 ])

@@ -1,57 +1,55 @@
 <template>
-  <van-overlay :show="true" @click="closeModal">
-    <div class="modal-wrapper" @click.stop>
-      <transition name="van-slide-up">
-        <div class="modal-content" v-if="show">
-          <!-- 标题 -->
-          <div class="modal-header">
-            <h2 class="modal-title">登录账号</h2>
-            <van-icon name="cross" size="20" @click="closeModal" class="close-icon" />
-          </div>
-
-          <!-- 表单 -->
-          <van-form @submit="handleLogin">
-            <!-- 用户名输入框 -->
-            <van-cell-group inset>
-              <van-field
-                v-model="username"
-                name="username"
-                label="用户名"
-                placeholder="请输入用户名"
-                :rules="[{ required: true, message: '请填写用户名' }]"
-              />
-              
-              <!-- 密码输入框 -->
-              <van-field
-                v-model="password"
-                :type="showPassword ? 'text' : 'password'"
-                name="password"
-                label="密码"
-                placeholder="请输入密码"
-                :rules="[{ required: true, message: '请填写密码' }]"
-                :right-icon="showPassword ? 'eye-o' : 'closed-eye'"
-                @click-right-icon="togglePassword"
-              />
-            </van-cell-group>
-
-            <!-- 登录按钮 -->
-            <div class="submit-wrapper">
-              <van-button 
-                round 
-                block 
-                type="primary" 
-                native-type="submit"
-                color="#2c3e50"
-                size="large"
-              >
-                确定
-              </van-button>
-            </div>
-          </van-form>
+  <div class="modal-wrapper">
+    <transition name="van-slide-up">
+      <div class="modal-content" v-if="show">
+        <!-- 标题 -->
+        <div class="modal-header">
+          <h2 class="modal-title">登录账号</h2>
+          <van-icon name="cross" size="20" @click="closeModal" class="close-icon" />
         </div>
-      </transition>
-    </div>
-  </van-overlay>
+
+        <!-- 表单 -->
+        <van-form @submit="handleLogin">
+          <!-- 用户名输入框 -->
+          <van-cell-group inset>
+            <van-field
+              v-model="username"
+              name="username"
+              label="用户名"
+              placeholder="请输入用户名"
+              :rules="[{ required: true, message: '请填写用户名' }]"
+            />
+            
+            <!-- 密码输入框 -->
+            <van-field
+              v-model="password"
+              :type="showPassword ? 'text' : 'password'"
+              name="password"
+              label="密码"
+              placeholder="请输入密码"
+              :rules="[{ required: true, message: '请填写密码' }]"
+              :right-icon="showPassword ? 'eye-o' : 'closed-eye'"
+              @click-right-icon="togglePassword"
+            />
+          </van-cell-group>
+
+          <!-- 登录按钮 -->
+          <div class="submit-wrapper">
+            <van-button 
+              round 
+              block 
+              type="primary" 
+              native-type="submit"
+              color="#2c3e50"
+              size="large"
+            >
+              确定
+            </van-button>
+          </div>
+        </van-form>
+      </div>
+    </transition>
+  </div>
 </template>
 
 <script setup>
@@ -139,9 +137,9 @@ const handleLogin = async () => {
       showSuccessToast('登录成功！')
       closeModal()
       
-      // 跳转到首页
+      // 重载当前页面
       setTimeout(() => {
-        router.push('/home')
+        window.location.reload()
       }, 1000)
     } else {
       showFailToast(response.msg || '登录失败')
@@ -156,13 +154,17 @@ const handleLogin = async () => {
 
 <style scoped>
 .modal-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
   padding: 20px;
-  position: relative;
-  z-index: 2001;
+  z-index: 1001;
+  pointer-events: none;
 }
 
 .modal-content {
@@ -172,6 +174,7 @@ const handleLogin = async () => {
   width: 100%;
   max-width: 450px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  pointer-events: auto;
 }
 
 .modal-header {

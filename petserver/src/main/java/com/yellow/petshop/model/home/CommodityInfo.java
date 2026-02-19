@@ -13,13 +13,18 @@ import java.math.BigDecimal;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Commodity {
+public class CommodityInfo {
     @TableId(type = IdType.AUTO)
     private Long id;
+    private Long categoryId;
     private String name;
     private BigDecimal price;
     private String unit;
     private Integer sold;
     private String mainPicUrl;
     private String msg;
+    private String detail;
+    private Boolean isValid;
+    private String shippingOrigin;
+    private BigDecimal postage;
 }

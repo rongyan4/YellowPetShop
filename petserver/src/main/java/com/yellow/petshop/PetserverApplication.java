@@ -4,11 +4,11 @@ import io.github.cdimascio.dotenv.Dotenv;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-import static com.baomidou.mybatisplus.extension.spi.SpringCompatibleSet.applicationContext;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @MapperScan("com.yellow.petshop.mapper")
+@EnableScheduling  // 启用定时任务
 public class PetserverApplication {
 
     public static void main(String[] args) {

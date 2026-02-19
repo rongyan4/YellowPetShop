@@ -17,7 +17,7 @@ import { getToken, parseJWT, isAuthenticated } from '@/utils/auth';
 const router = useRouter();
 const isLoggedIn = ref(false);
 const userInfo = ref({
-  avatar: '/images/touxiang.jpg',
+  avatar: '/images/default_avatar.png',
   username: '请登录',
   level: '',
   currentPoints: 0,
@@ -44,7 +44,7 @@ onMounted(() => {
       
       // 更新用户信息
       userInfo.value = {
-        avatar: '/images/touxiang.jpg', // 可以从后端获取
+        avatar: '/images/default_avatar.png', // 可以从后端获取
         username: payload.username || '用户',
         level: 'S1',
         currentPoints: 0,
@@ -59,7 +59,7 @@ onMounted(() => {
     isLoggedIn.value = false;
     // 未登录时的默认信息
     userInfo.value = {
-      avatar: '/images/touxiang.jpg',
+      avatar: '/images/default_avatar.png',
       username: '请登录',
       level: '',
       currentPoints: 0,

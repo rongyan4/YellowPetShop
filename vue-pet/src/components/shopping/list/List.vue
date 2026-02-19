@@ -1,51 +1,101 @@
 <template>
   <div class="list-view">
-    <div class="category-container">
+    <!-- 分类预览模式 -->
+    <div v-if="!selectedCategory" class="category-preview-mode">
       <!-- 左侧分类导航 -->
       <div class="category-sidebar">
         <div
-          v-for="(category, index) in categories"
-          :key="category.id || index"
+          v-for="category in categories"
+          :key="category.id"
           class="category-item"
-          :class="{ 'category-item--active': activeCategory === index }"
-          @click="onCategoryChange(index)"
+          @click="scrollToCategory(category.id)"
         >
-          {{ category.name }}
+          <van-icon :name="category.icon || 'bag-o'" size="20" />
+          <span>{{ category.name }}</span>
         </div>
       </div>
 
-      <!-- 右侧商品列表 -->
-      <div class="goods-container" ref="goodsContainerRef" @scroll="onScroll">
+      <!-- 右侧分类商品预览 -->
+      <div class="category-content" ref="categoryContentRef">
         <div
-          v-for="(category, index) in categories"
-          :key="category.id || index"
-          :id="`category-${index}`"
+          v-for="category in categories"
+          :key="category.id"
+          :ref="el => setCategoryRef(category.id, el)"
           class="category-section"
         >
-          <div class="category-title">
-            <span class="title-text">{{ category.name }}</span>
+          <div class="category-header">
+            <h2 class="category-title">{{ category.name }}</h2>
           </div>
-          <div class="goods-list">
+          
+          <div class="goods-grid">
             <div
-              v-for="(item, itemIndex) in category.goods || []"
-              :key="itemIndex"
+              v-for="(item, index) in categoryGoods[category.id] || []"
+              :key="item.id"
               class="goods-item"
+              :class="{ 'goods-item--more': index === 5 }"
+              @click="index === 5 ? viewMoreGoods(category) : handleGoodsClick(item)"
+            >
+              <template v-if="index < 5">
+                <div class="goods-img">
+                  <img :src="item.mainPicUrl || '/images/goods/ml.png'" :alt="item.name" />
+                </div>
+                <div class="goods-info">
+                  <h3 class="goods-title">{{ item.name }}</h3>
+                  <div class="goods-price">
+                    <span class="price-symbol">¥</span>
+                    <span class="price-value">{{ item.price }}</span>
+                  </div>
+                </div>
+              </template>
+              <template v-else>
+                <div class="more-icon">
+                  <van-icon name="plus" size="32" />
+                  <span>查看更多</span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 分类详情模式（瀑布流） -->
+    <div v-else class="category-detail-mode">
+      <div class="detail-header">
+        <van-icon name="arrow-left" @click="backToPreview" />
+        <h2>{{ selectedCategory.name }}</h2>
+      </div>
+      
+      <div class="detail-content">
+        <van-list
+          v-model:loading="loading"
+          :finished="finished"
+          finished-text="没有更多了"
+          loading-text="加载中..."
+          @load="onLoad"
+        >
+          <div class="goods-waterfall">
+            <div
+              v-for="item in goodsList"
+              :key="item.id"
+              class="waterfall-item"
               @click="handleGoodsClick(item)"
             >
               <div class="goods-img">
-                <img :src="item.imgUrl || '/images/goods/ml.png'" alt="商品图片" />
+                <img :src="item.mainPicUrl || '/images/goods/ml.png'" :alt="item.name" />
               </div>
               <div class="goods-info">
-                <h3 class="goods-title">{{ item.title || '商品名称' }}</h3>
+                <h3 class="goods-title">{{ item.name }}</h3>
+                <div class="goods-desc" v-if="item.msg">{{ item.msg }}</div>
                 <div class="goods-price">
-                  <span class="price-symbol">￥</span>
-                  <span class="price-value">{{ item.price || '0.00' }}</span>
+                  <span class="price-symbol">¥</span>
+                  <span class="price-value">{{ item.price }}</span>
                   <span class="price-unit" v-if="item.unit">/{{ item.unit }}</span>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </van-list>
       </div>
     </div>
   </div>
@@ -53,231 +103,230 @@
 
 <script setup>
 import { ref, onMounted, nextTick } from 'vue';
-import { getCategoryListSafe, getGoodsByCategorySafe } from '@/api/list';
+import { useRouter } from 'vue-router';
+import { showToast } from 'vant';
+import { getAllCategoriesSafe, getGoodsByCategorySafe } from '@/api/goods';
 
-const activeCategory = ref(0);
-const goodsContainerRef = ref(null);
+const router = useRouter();
+
+// 分类列表
 const categories = ref([]);
-const isScrolling = ref(false);
 
-const generateMockData = () => {
-  const mockCategories = [
-    { name: '全部分类', pinyin: 'qbfl' },
-    { name: '狗粮', pinyin: 'gl' },
-    { name: '猫粮', pinyin: 'ml' },
-    { name: '宠物玩具', pinyin: 'cwwj' },
-    { name: '宠物用品', pinyin: 'cwyp' },
-    { name: '宠物零食', pinyin: 'cwls' },
-    { name: '宠物医疗', pinyin: 'cwyl' },
-    { name: '宠物清洁', pinyin: 'cwqj' },
-    { name: '宠物服饰', pinyin: 'cwfs' }
-  ];
+// 分类商品预览数据（每个分类最多6个商品，第6个用于"查看更多"）
+const categoryGoods = ref({});
 
-  return mockCategories.map((item, index) => ({
-    id: index,
-    name: item.name,
-    pinyin: item.pinyin,
-    goods: Array.from({ length: 6 }, (_, i) => ({
-      id: `${index}-${i}`,
-      title: `${item.name}商品${i + 1}`,
-      price: (Math.random() * 100 + 10).toFixed(2),
-      imgUrl: '/images/goods/ml.png',
-      unit: index < 3 ? 'kg' : '件'
-    }))
-  }));
-};
+// 分类元素引用
+const categoryRefs = ref({});
+const categoryContentRef = ref(null);
 
-const fetchCategories = async () => {
-  const data = await getCategoryListSafe();
-  if (data && Array.isArray(data) && data.length > 0) {
-    categories.value = data.map(category => ({
-      ...category,
-      pinyin: category.pinyin || category.name
-    }));
-  } else {
-    categories.value = generateMockData();
+// 选中的分类（用于详情模式）
+const selectedCategory = ref(null);
+
+// 详情模式的商品列表
+const goodsList = ref([]);
+const loading = ref(false);
+const finished = ref(false);
+const currentPage = ref(1);
+const pageSize = ref(10);
+
+// 设置分类元素引用
+const setCategoryRef = (categoryId, el) => {
+  if (el) {
+    categoryRefs.value[categoryId] = el;
   }
-  await fetchGoodsForCategories();
 };
 
-const fetchGoodsForCategories = async () => {
-  const goodsPromises = categories.value.map((category, index) => {
-    if (category.pinyin) {
-      return getGoodsByCategorySafe(category.pinyin).then(goods => ({
-        index,
-        goods: goods && Array.isArray(goods) ? goods : []
-      }));
+// 加载所有分类
+const loadCategories = async () => {
+  const data = await getAllCategoriesSafe();
+  if (data && Array.isArray(data)) {
+    categories.value = data;
+    // 为每个分类加载商品预览
+    for (const category of data) {
+      await loadCategoryPreview(category.id);
     }
-    return Promise.resolve({ index, goods: [] });
-  });
-  
-  const results = await Promise.all(goodsPromises);
-  results.forEach(({ index, goods }) => {
-    if (categories.value[index] && goods.length > 0) {
-      categories.value[index].goods = goods;
-    }
-  });
+  }
 };
 
-const onCategoryChange = async (index) => {
-  if (isScrolling.value) return;
-  
-  activeCategory.value = index;
-  isScrolling.value = true;
-  await nextTick();
-  
-  const targetElement = document.getElementById(`category-${index}`);
-  if (targetElement && goodsContainerRef.value) {
-    const container = goodsContainerRef.value;
-    const targetTop = targetElement.offsetTop - container.offsetTop;
-    
+// 加载分类商品预览（6个商品）
+const loadCategoryPreview = async (categoryId) => {
+  const pageResult = await getGoodsByCategorySafe(categoryId, 1, 6);
+  if (pageResult && pageResult.records) {
+    categoryGoods.value[categoryId] = pageResult.records;
+  }
+};
+
+// 滚动到指定分类
+const scrollToCategory = (categoryId) => {
+  const element = categoryRefs.value[categoryId];
+  if (element && categoryContentRef.value) {
+    const container = categoryContentRef.value;
+    const offsetTop = element.offsetTop - container.offsetTop;
     container.scrollTo({
-      top: targetTop,
+      top: offsetTop,
       behavior: 'smooth'
     });
-    
-    setTimeout(() => {
-      isScrolling.value = false;
-    }, 500);
   }
 };
 
-const onScroll = () => {
-  if (isScrolling.value) return;
+// 查看更多商品（进入分类详情模式）
+const viewMoreGoods = (category) => {
+  selectedCategory.value = category;
+  goodsList.value = [];
+  currentPage.value = 1;
+  finished.value = false;
   
-  const container = goodsContainerRef.value;
-  if (!container) return;
+  // 触发加载
+  nextTick(() => {
+    onLoad();
+  });
+};
+
+// 返回预览模式
+const backToPreview = () => {
+  selectedCategory.value = null;
+  goodsList.value = [];
+  currentPage.value = 1;
+  finished.value = false;
+};
+
+// 加载分类详情商品（分页）
+const onLoad = async () => {
+  if (!selectedCategory.value) return;
   
-  const scrollTop = container.scrollTop;
-  
-  const categoryElements = categories.value.map((_, index) => {
-    const element = document.getElementById(`category-${index}`);
-    if (element) {
-      const rect = element.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
-      return {
-        index,
-        top: rect.top - containerRect.top + scrollTop,
-        bottom: rect.bottom - containerRect.top + scrollTop
-      };
-    }
-    return null;
-  }).filter(Boolean);
-  
-  for (let i = 0; i < categoryElements.length; i++) {
-    const current = categoryElements[i];
-    const next = categoryElements[i + 1];
+  try {
+    loading.value = true;
     
-    if (
-      scrollTop >= current.top - 100 &&
-      (!next || scrollTop < next.top - 100)
-    ) {
-      if (activeCategory.value !== current.index) {
-        activeCategory.value = current.index;
+    const pageResult = await getGoodsByCategorySafe(
+      selectedCategory.value.id,
+      currentPage.value,
+      pageSize.value
+    );
+    
+    if (pageResult && pageResult.records) {
+      goodsList.value = [...goodsList.value, ...pageResult.records];
+      
+      if (!pageResult.hasNext || pageResult.records.length === 0) {
+        finished.value = true;
+      } else {
+        currentPage.value++;
       }
-      break;
+    } else {
+      finished.value = true;
     }
+  } catch (error) {
+    console.error('加载商品失败:', error);
+    finished.value = true;
+  } finally {
+    loading.value = false;
   }
 };
 
+// 点击商品跳转详情
 const handleGoodsClick = (item) => {
-  console.log('点击商品:', item);
+  router.push({
+    path: '/good-details',
+    query: { id: item.id }
+  });
 };
 
 onMounted(() => {
-  categories.value = generateMockData();
-  fetchCategories();
+  loadCategories();
 });
 </script>
 
 <style lang="scss" scoped>
 .list-view {
   height: 100%;
-  display: flex;
-  flex-direction: column;
   background-color: #f7f7f7;
   overflow: hidden;
 }
 
-.category-container {
-  flex: 1;
+/* 分类预览模式 */
+.category-preview-mode {
   display: flex;
   height: 100%;
-  overflow: hidden;
 }
 
 .category-sidebar {
-  width: 2.1333rem;
+  width: 2rem;
   background-color: #f8f8f8;
   overflow-y: auto;
   flex-shrink: 0;
 }
 
 .category-item {
-  padding: 0.5333rem 0.2667rem;
-  font-size: 0.3733rem;
+  padding: 0.4rem 0.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1333rem;
+  font-size: 0.32rem;
   color: #666;
-  text-align: center;
-  border-left: 3px solid transparent;
-  transition: all 0.3s;
   cursor: pointer;
-  user-select: none;
+  transition: all 0.2s;
 
   &:active {
     background-color: #f0f0f0;
   }
 
-  &--active {
-    color: #ff4d4f;
-    background-color: #fff;
-    border-left-color: #ff4d4f;
-    font-weight: 600;
+  span {
+    text-align: center;
+    word-break: keep-all;
   }
 }
 
-.goods-container {
+.category-content {
   flex: 1;
   overflow-y: auto;
   background-color: #fff;
-  padding: 0 0.2667rem;
+  padding: 0.2667rem;
 }
 
 .category-section {
   margin-bottom: 0.5333rem;
-}
 
-.category-title {
-  padding: 0.4rem 0.2667rem;
-  background-color: #fff;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  border-bottom: 1px solid #f0f0f0;
-
-  .title-text {
-    font-size: 0.4267rem;
-    font-weight: 600;
-    color: #333;
+  &:last-child {
+    margin-bottom: 0;
   }
 }
 
-.goods-list {
-  display: flex;
-  flex-wrap: wrap;
+.category-header {
+  margin-bottom: 0.2667rem;
+}
+
+.category-title {
+  font-size: 0.4267rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  padding: 0.2667rem 0;
+}
+
+.goods-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.2667rem;
-  padding-bottom: 0.2667rem;
 }
 
 .goods-item {
-  width: calc(50% - 0.1333rem);
   background-color: #fff;
-  border-radius: 0.16rem;
+  border-radius: 0.2133rem;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.2s;
 
   &:active {
     transform: scale(0.98);
+  }
+
+  &--more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f5f5f5;
+    min-height: 3.2rem;
   }
 }
 
@@ -291,7 +340,6 @@ onMounted(() => {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    display: block;
   }
 }
 
@@ -300,41 +348,135 @@ onMounted(() => {
 }
 
 .goods-title {
-  font-size: 0.3467rem;
+  font-size: 0.32rem;
   color: #333;
-  margin: 0 0 0.16rem 0;
-  font-weight: 500;
-  line-height: 1.4;
+  margin: 0 0 0.1333rem 0;
+  line-height: 1.3;
   display: -webkit-box;
   -webkit-line-clamp: 2;
-  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  word-break: break-word;
 }
 
 .goods-price {
   display: flex;
   align-items: baseline;
-  font-size: 0.4267rem;
   color: #ff4d4f;
   font-weight: 600;
 
   .price-symbol {
-    font-size: 0.32rem;
-    margin-right: 0.0267rem;
+    font-size: 0.2933rem;
   }
 
   .price-value {
+    font-size: 0.3733rem;
+  }
+}
+
+.more-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1333rem;
+  color: #999;
+
+  span {
+    font-size: 0.32rem;
+  }
+}
+
+/* 分类详情模式 */
+.category-detail-mode {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.2667rem;
+  padding: 0.4rem;
+  background-color: #fff;
+  border-bottom: 1px solid #f0f0f0;
+
+  h2 {
     font-size: 0.4267rem;
+    font-weight: 600;
+    margin: 0;
   }
 
-  .price-unit {
+  .van-icon {
+    font-size: 0.5333rem;
+    cursor: pointer;
+  }
+}
+
+.detail-content {
+  flex: 1;
+  overflow-y: auto;
+  background-color: #f7f7f7;
+  padding: 0.2667rem;
+}
+
+.goods-waterfall {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.2667rem;
+}
+
+.waterfall-item {
+  background-color: #fff;
+  border-radius: 0.2133rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  .goods-img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+  }
+
+  .goods-info {
+    padding: 0.2667rem;
+  }
+
+  .goods-title {
+    font-size: 0.3467rem;
+    margin-bottom: 0.1333rem;
+  }
+
+  .goods-desc {
     font-size: 0.2933rem;
     color: #999;
-    font-weight: normal;
-    margin-left: 0.0533rem;
+    margin-bottom: 0.1333rem;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .goods-price {
+    .price-symbol {
+      font-size: 0.32rem;
+    }
+
+    .price-value {
+      font-size: 0.4267rem;
+    }
+
+    .price-unit {
+      font-size: 0.2933rem;
+      color: #999;
+      font-weight: normal;
+      margin-left: 0.0533rem;
+    }
   }
 }
 </style>

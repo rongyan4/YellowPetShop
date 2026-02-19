@@ -1,7 +1,7 @@
 package com.yellow.petshop.controller;
 
 import com.yellow.petshop.model.Result;
-import com.yellow.petshop.model.home.Commodity;
+import com.yellow.petshop.model.home.CommodityInfo;
 import com.yellow.petshop.service.RecommendService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,8 +23,8 @@ public class RecommendController {
      * @return 轮播图图片路径数组
      */
     @GetMapping("/recommend")
-    public Result<List<Commodity>> getRecommendCommodityList(){
-            List<Commodity> recommendCommodityList = recommendService.getRecommendCommodityList();
+    public Result<List<CommodityInfo>> getRecommendCommodityList(){
+            List<CommodityInfo> recommendCommodityList = recommendService.getRecommendCommodityList();
             return Result.success(recommendCommodityList);
     }
 }

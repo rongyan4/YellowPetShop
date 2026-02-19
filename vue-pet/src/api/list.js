@@ -23,7 +23,7 @@ export const getCategoryListSafe = () => {
  * @returns {Promise} 返回商品列表数据响应对象
  */
 export const getGoodsByCategory = (pinyin) => {
-  return get('/list/goods', { pinyin });
+  return get('/shopping/goods', { pinyin });
 };
 
 /**

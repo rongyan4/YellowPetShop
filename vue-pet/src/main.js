@@ -6,7 +6,37 @@ import "@/assets/css/global.css";
 import "@/assets/js/flexible.js";
 import "@/assets/css/iconfont.css"
 import "vant/lib/index.css"
-import { Button, NavBar, Icon, Checkbox, Overlay, Form, Field, CellGroup, Progress, Toast } from 'vant';
+import { 
+  Button, 
+  NavBar, 
+  Icon, 
+  Checkbox, 
+  Overlay, 
+  Form, 
+  Field, 
+  CellGroup, 
+  Progress, 
+  Toast, 
+  DatePicker, 
+  Popup, 
+  Uploader,
+  Swipe,
+  SwipeItem,
+  Cell,
+  Image as VanImage,
+  Tag,
+  GoodsAction,
+  GoodsActionIcon,
+  GoodsActionButton,
+  Badge,
+  AddressList,
+  AddressEdit,
+  Area,
+  Radio,
+  RadioGroup,
+  Stepper,
+  Dialog
+} from 'vant';
 
 
 
@@ -23,4 +53,23 @@ app.use(pinia)
    .use(CellGroup)
    .use(Progress)
    .use(Toast)
+   .use(DatePicker)
+   .use(Popup)
+   .use(Uploader)
+   .use(Swipe)
+   .use(SwipeItem)
+   .use(Cell)
+   .use(VanImage)
+   .use(Tag)
+   .use(GoodsAction)
+   .use(GoodsActionIcon)
+   .use(GoodsActionButton)
+   .use(Badge)
+   .use(AddressList)
+   .use(AddressEdit)
+   .use(Area)
+   .use(Radio)
+   .use(RadioGroup)
+   .use(Stepper)
+   .use(Dialog)
    .mount("#app");

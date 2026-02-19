@@ -77,31 +77,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User getUserById(Long id) {
-        // 使用UserMapper根据ID查询用户
-        return userMapper.selectById(id);
-    }
-
-    @Override
-    public UserInfo getInfo(Long id) {
-        User user = userMapper.selectById(id);
-        if (user == null) {
-            return null;
-        }
-        // 将User转换为UserInfo（不包含密码）
-        return UserInfo.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .nickname(user.getNickname())
-                .avatar(user.getAvatar())
-                .status(user.getStatus())
-                .role(user.getRole())
-                .build();
-    }
-
-    @Override
-    public UserInfo getUserInfo(Long userId) {
+    public UserInfo getInfo(Long userId) {
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new RuntimeException("用户不存在");
@@ -115,6 +91,31 @@ public class UserServiceImpl implements UserService {
                 .avatar(user.getAvatar())
                 .status(user.getStatus())
                 .role(user.getRole())
+                .gender(user.getGender())
+                .birthday(user.getBirthday())
                 .build();
+    }
+
+    @Override
+    public void updateInfo(UserInfo userInfo){
+        User user = userMapper.selectById(userInfo.getId());
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        user.setAvatar(userInfo.getAvatar());
+        user.setNickname(userInfo.getNickname());
+        user.setGender(userInfo.getGender());
+        user.setBirthday(userInfo.getBirthday());
+        userMapper.updateById(user);
+    }
+
+    @Override
+    public void updateAvatar(Long userId, String avatarUrl) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        user.setAvatar(avatarUrl);
+        userMapper.updateById(user);
     }
 }

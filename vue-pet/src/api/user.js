@@ -65,3 +65,36 @@ export const logout = () => {
     method: 'post'
   });
 };
+
+/**
+ * 更新用户信息（昵称、性别、生日）
+ * @param {Object} data - 用户信息
+ * @param {string} data.username - 用户名
+ * @param {string} data.nickname - 昵称
+ * @param {string} data.gender - 性别
+ * @param {string} data.birthday - 生日 (YYYY-MM-DD)
+ * @returns {Promise}
+ */
+export const updateUserInfo = (data) => {
+  return request({
+    url: '/user/update_info',
+    method: 'post',
+    data
+  });
+};
+
+/**
+ * 上传头像
+ * @param {FormData} formData - 包含头像文件的表单数据
+ * @returns {Promise}
+ */
+export const uploadAvatar = (formData) => {
+  return request({
+    url: '/user/upload_avatar',
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+};

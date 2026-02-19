@@ -1,7 +1,7 @@
 <template>
   <div class="user-info-bar">
     <div class="user-avatar">
-      <img :src="userInfo.avatar || '/images/touxiang.jpg'" alt="用户头像" />
+      <img :src="userInfo.avatar || '/images/default_avatar.png'" alt="用户头像" />
       <span class="level-badge" v-if="userInfo.level">{{ userInfo.level }}</span>
     </div>
     <div class="user-details">
@@ -33,7 +33,7 @@ const props = defineProps({
   userInfo: {
     type: Object,
     default: () => ({
-      avatar: '/images/touxiang.jpg',
+      avatar: '/images/default_avatar.png',
       username: '用户',
       level: 'S1',
       currentPoints: 0,

@@ -1,9 +1,9 @@
 package com.yellow.petshop.service;
 
-import com.yellow.petshop.model.home.Commodity;
+import com.yellow.petshop.model.home.CommodityInfo;
 
 import java.util.List;
 
 public interface RecommendService {
-    List<Commodity> getRecommendCommodityList();
+    List<CommodityInfo> getRecommendCommodityList();
 }

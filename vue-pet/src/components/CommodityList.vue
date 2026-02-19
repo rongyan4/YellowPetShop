@@ -1,7 +1,7 @@
 <template>
   <div class="commodity-list">
     <div class="list">
-      <li v-for="(item, index) in goods" :key="index">
+      <li v-for="(item, index) in displayGoods" :key="index" @click="handleGoodsClick(item)">
         <div class="img-box">
           <img :src="item.mainPicUrl" alt="商品图片" />
           <p class="msg" v-if="item.msg">{{ item.msg }}</p>
@@ -13,18 +13,41 @@
         </div>
         <div class="saled" v-if="item.sold">已售 {{ item.sold }} 件</div>
       </li>
-      <span class="no-more">没有更多内容啦~</span>
     </div>
   </div>
 </template>
 
 <script setup>
-defineProps({
+import { useRouter } from 'vue-router';
+import { computed } from 'vue';
+
+const router = useRouter();
+
+const props = defineProps({
+  goodsList: {
+    type: Array,
+    default: () => []
+  },
   goods: {
     type: Array,
     default: () => []
   }
-})
+});
+
+// 兼容两种 prop 名称
+const displayGoods = computed(() => {
+  return props.goodsList.length > 0 ? props.goodsList : props.goods;
+});
+
+const handleGoodsClick = (item) => {
+  // 跳转到商品详情页，传递商品ID
+  router.push({
+    path: '/good-details',
+    query: {
+      id: item.id
+    }
+  });
+};
 </script>
 
 <style lang="scss" scoped>
@@ -50,6 +73,17 @@ defineProps({
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
       height: auto; // 高度随内容自适应
       box-sizing: border-box; // 确保 padding 包含在宽度内
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:active {
+        transform: scale(0.98);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      }
+
+      &:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
 
       .img-box {
         position: relative;
@@ -124,16 +158,6 @@ defineProps({
         margin: 0;
         margin-top: auto; // 推到容器底部
       }
-    }
-
-    .no-more {
-      display: block;
-      column-span: all; // 跨越所有列
-      text-align: center;
-      font-size: .32rem;
-      color: #999;
-      padding: .5333rem 0;
-      margin-top: .2667rem;
     }
   }
 }

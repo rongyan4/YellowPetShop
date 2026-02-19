@@ -54,11 +54,15 @@
         <img :src="image" alt="图片" />
       </div>
     </div>
+
+    <!-- 登录选择弹窗 -->
+    <LoginChoice v-if="showLoginChoice" @close="showLoginChoice = false" />
   </div>
 </template>
 
 <script setup>
 import UserInfoBar from '@/components/shopping/UserInfoBar.vue';
+import LoginChoice from '@/components/login/LoginChoice.vue';
 import { Swipe, SwipeItem } from 'vant';
 import { ref, onMounted, computed } from 'vue';
 import { getSwipeImagesSafe } from '@/api/home';
@@ -74,7 +78,7 @@ const props = defineProps({
   userInfo: {
     type: Object,
     default: () => ({
-      avatar: '/images/touxiang.jpg',
+      avatar: '/images/default_avatar.png',
       username: '请登录',
       level: '',
       currentPoints: 0,
@@ -87,6 +91,7 @@ const props = defineProps({
 });
 
 const SwipeImages = ref([]);
+const showLoginChoice = ref(false);
 const bannerImages = ref([
   '/images/banner/banner1.jpg',
   '/images/banner/banner2.jpg',
@@ -123,15 +128,22 @@ const fetchSwipeImageUrl = async () => {
 // 点击用户信息条
 const handleUserInfoClick = () => {
   if (!props.isLoggedIn) {
-    // 未登录，跳转到登录页
-    router.push('/login');
+    // 未登录，弹出登录选择框
+    showLoginChoice.value = true;
+  } else {
+    // 已登录，跳转到我的页面
+    router.push('/my');
   }
 };
 
 const handleServiceClick = (type) => {
   console.log('选择服务类型:', type);
-  // 跳转到购物页面
-  router.push('/home');
+  // 跳转到购物页面并携带参数
+  if (type === 'self-pickup') {
+    router.push({ path: '/shopping', query: { by: 'take' } });
+  } else if (type === 'delivery') {
+    router.push({ path: '/shopping', query: { by: 'delivery' } });
+  }
 };
 
 const handleFeatureClick = (type) => {

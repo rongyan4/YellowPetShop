@@ -8,8 +8,10 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@vant/area-data": "^2.1.0",
     "axios": "^1.13.2",
     "core-js": "^3.8.3",
+    "http-proxy-middleware": "^3.0.5",
     "pinia": "^2.3.1",
     "pnpm": "^10.22.0",
     "sass": "^1.93.3",

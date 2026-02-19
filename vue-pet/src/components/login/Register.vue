@@ -1,110 +1,108 @@
 <template>
-  <van-overlay :show="true" @click="closeModal">
-    <div class="modal-wrapper" @click.stop>
-      <transition name="van-slide-up">
-        <div class="modal-content" v-if="show">
-          <!-- 标题 -->
-          <div class="modal-header">
-            <h2 class="modal-title">注册账号</h2>
-            <van-icon name="cross" size="20" @click="closeModal" class="close-icon" />
+  <div class="modal-wrapper">
+    <transition name="van-slide-up">
+      <div class="modal-content" v-if="show">
+        <!-- 标题 -->
+        <div class="modal-header">
+          <h2 class="modal-title">注册账号</h2>
+          <van-icon name="cross" size="20" @click="closeModal" class="close-icon" />
+        </div>
+
+        <!-- 表单 -->
+        <van-form @submit="handleRegister">
+          <!-- 邮箱输入框 -->
+          <van-cell-group inset>
+            <van-field
+              v-model="email"
+              name="email"
+              label="邮箱"
+              placeholder="请输入邮箱"
+              type="email"
+              :rules="[
+                { required: true, message: '请填写邮箱' },
+                { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: '请输入正确的邮箱格式' }
+              ]"
+            />
+            
+            <!-- 用户名输入框 -->
+            <van-field
+              v-model="username"
+              name="username"
+              label="用户名"
+              placeholder="请输入用户名"
+              :rules="[{ required: true, message: '请填写用户名' }]"
+            />
+            
+            <!-- 密码输入框 -->
+            <van-field
+              v-model="password"
+              :type="showPassword ? 'text' : 'password'"
+              name="password"
+              label="密码"
+              placeholder="请输入密码"
+              :rules="[{ required: true, message: '请填写密码' }]"
+              :right-icon="showPassword ? 'eye-o' : 'closed-eye'"
+              @click-right-icon="togglePassword"
+              @input="checkPasswordStrength"
+            />
+            
+            <!-- 确认密码输入框 -->
+            <van-field
+              v-model="confirmPassword"
+              :type="showConfirmPassword ? 'text' : 'password'"
+              name="confirmPassword"
+              label="确认密码"
+              placeholder="请确认密码"
+              :rules="[{ required: true, message: '请确认密码' }]"
+              :right-icon="showConfirmPassword ? 'eye-o' : 'closed-eye'"
+              @click-right-icon="toggleConfirmPassword"
+            />
+          </van-cell-group>
+
+          <!-- 密码强度指示器 -->
+          <div v-if="password" class="password-strength">
+            <div class="strength-info">
+              <span class="strength-label">密码强度：</span>
+              <span class="strength-text" :class="strengthClass">{{ strengthText }}</span>
+            </div>
+            <van-progress 
+              :percentage="strengthPercentage" 
+              :color="strengthColor"
+              :show-pivot="false"
+              stroke-width="6"
+            />
+            
+            <!-- 密码要求提示 -->
+            <div class="password-requirements">
+              <div class="requirement-item" :class="{ completed: isLengthValid }">
+                <van-icon :name="isLengthValid ? 'success' : 'cross'" :color="isLengthValid ? '#26de81' : '#ff4757'" size="14" />
+                <span class="requirement-text">密码长度至少8位</span>
+              </div>
+              <div class="requirement-item" :class="{ completed: hasLetterAndNumber }">
+                <van-icon :name="hasLetterAndNumber ? 'success' : 'cross'" :color="hasLetterAndNumber ? '#26de81' : '#ff4757'" size="14" />
+                <span class="requirement-text">必须包含英文和数字</span>
+              </div>
+            </div>
           </div>
 
-          <!-- 表单 -->
-          <van-form @submit="handleRegister">
-            <!-- 邮箱输入框 -->
-            <van-cell-group inset>
-              <van-field
-                v-model="email"
-                name="email"
-                label="邮箱"
-                placeholder="请输入邮箱"
-                type="email"
-                :rules="[
-                  { required: true, message: '请填写邮箱' },
-                  { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: '请输入正确的邮箱格式' }
-                ]"
-              />
-              
-              <!-- 用户名输入框 -->
-              <van-field
-                v-model="username"
-                name="username"
-                label="用户名"
-                placeholder="请输入用户名"
-                :rules="[{ required: true, message: '请填写用户名' }]"
-              />
-              
-              <!-- 密码输入框 -->
-              <van-field
-                v-model="password"
-                :type="showPassword ? 'text' : 'password'"
-                name="password"
-                label="密码"
-                placeholder="请输入密码"
-                :rules="[{ required: true, message: '请填写密码' }]"
-                :right-icon="showPassword ? 'eye-o' : 'closed-eye'"
-                @click-right-icon="togglePassword"
-                @input="checkPasswordStrength"
-              />
-              
-              <!-- 确认密码输入框 -->
-              <van-field
-                v-model="confirmPassword"
-                :type="showConfirmPassword ? 'text' : 'password'"
-                name="confirmPassword"
-                label="确认密码"
-                placeholder="请确认密码"
-                :rules="[{ required: true, message: '请确认密码' }]"
-                :right-icon="showConfirmPassword ? 'eye-o' : 'closed-eye'"
-                @click-right-icon="toggleConfirmPassword"
-              />
-            </van-cell-group>
-
-            <!-- 密码强度指示器 -->
-            <div v-if="password" class="password-strength">
-              <div class="strength-info">
-                <span class="strength-label">密码强度：</span>
-                <span class="strength-text" :class="strengthClass">{{ strengthText }}</span>
-              </div>
-              <van-progress 
-                :percentage="strengthPercentage" 
-                :color="strengthColor"
-                :show-pivot="false"
-                stroke-width="6"
-              />
-              
-              <!-- 密码要求提示 -->
-              <div class="password-requirements">
-                <div class="requirement-item" :class="{ completed: isLengthValid }">
-                  <van-icon :name="isLengthValid ? 'success' : 'cross'" :color="isLengthValid ? '#26de81' : '#ff4757'" size="14" />
-                  <span class="requirement-text">密码长度至少8位</span>
-                </div>
-                <div class="requirement-item" :class="{ completed: hasLetterAndNumber }">
-                  <van-icon :name="hasLetterAndNumber ? 'success' : 'cross'" :color="hasLetterAndNumber ? '#26de81' : '#ff4757'" size="14" />
-                  <span class="requirement-text">必须包含英文和数字</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- 注册按钮 -->
-            <div class="submit-wrapper">
-              <van-button 
-                round 
-                block 
-                type="primary" 
-                native-type="submit"
-                :disabled="!canRegister"
-                :color="canRegister ? '#2c3e50' : '#bbb'"
-                size="large"
-              >
-                注册
-              </van-button>
-            </div>
-          </van-form>
-        </div>
-      </transition>
-    </div>
-  </van-overlay>
+          <!-- 注册按钮 -->
+          <div class="submit-wrapper">
+            <van-button 
+              round 
+              block 
+              type="primary" 
+              native-type="submit"
+              :disabled="!canRegister"
+              :color="canRegister ? '#2c3e50' : '#bbb'"
+              size="large"
+            >
+              注册
+            </van-button>
+          </div>
+        </van-form>
+      </div>
+    </transition>
+  </div>
 </template>
 
 <script setup>
@@ -264,13 +262,17 @@ const handleRegister = async () => {
 
 <style scoped>
 .modal-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
   padding: 20px;
-  position: relative;
-  z-index: 2001;
+  z-index: 1001;
+  pointer-events: none;
 }
 
 .modal-content {
@@ -282,6 +284,7 @@ const handleRegister = async () => {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   max-height: 90vh;
   overflow-y: auto;
+  pointer-events: auto;
 }
 
 .modal-header {
