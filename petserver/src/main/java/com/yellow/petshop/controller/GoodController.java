@@ -52,7 +52,7 @@ public class GoodController {
     }
 
     /**
-     * 获取商品详情（包含图片列表、发货地、邮费等完整信息）
+     * 获取商品详情（包含图片列表、发货地、邮费、销量等完整信息）
      * 访问路径: GET /api/goods/detail?id=商品ID
      *
      * @param id 商品ID
@@ -68,4 +68,3 @@ public class GoodController {
         }
     }
 }
-

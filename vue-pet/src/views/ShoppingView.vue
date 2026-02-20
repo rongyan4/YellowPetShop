@@ -31,10 +31,14 @@ import Header from "@/components/shopping/Header.vue"
 import section1 from "@/components/shopping/section1/section1.vue"
 import List from "@/components/shopping/list/List.vue"
 import Search from "@/components/shopping/search/Search.vue"
-import { onBeforeMount, onMounted, ref, nextTick } from 'vue';
+import { onBeforeMount, onMounted, onBeforeUnmount, ref, nextTick } from 'vue';
 import { Tab,Tabs } from 'vant';
+import { useRoute } from 'vue-router';
 import axios from 'axios';
 import { getToken, parseJWT } from '@/utils/auth';
+import { saveScrollPosition, restoreScrollPosition } from '@/utils/scrollPosition';
+
+const route = useRoute();
 
 onBeforeMount(async() => {
   let res = await({
@@ -64,6 +68,14 @@ onMounted(() => {
   } else {
     console.log('未登录，没有Token');
   }
+  
+  // 恢复滚动位置和标签页
+  restoreScrollPosition(route.path);
+});
+
+// 页面卸载前保存滚动位置
+onBeforeUnmount(() => {
+  saveScrollPosition(route.path, window.scrollY || window.pageYOffset);
 });
 
 const active = ref(0);

@@ -18,10 +18,12 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { computed } from 'vue';
+import { saveScrollPosition } from '@/utils/scrollPosition';
 
 const router = useRouter();
+const route = useRoute();
 
 const props = defineProps({
   goodsList: {
@@ -40,6 +42,9 @@ const displayGoods = computed(() => {
 });
 
 const handleGoodsClick = (item) => {
+  // 保存当前滚动位置
+  saveScrollPosition(route.path, window.scrollY || window.pageYOffset);
+  
   // 跳转到商品详情页，传递商品ID
   router.push({
     path: '/good-details',

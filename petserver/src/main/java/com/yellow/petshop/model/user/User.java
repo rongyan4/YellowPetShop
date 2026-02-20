@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @TableName("user")
 @AllArgsConstructor
@@ -25,4 +27,8 @@ public class User {
     private String status;
     private String role;
     private String birthday;
+    private String phone;
+    private Integer isValid;
+    private LocalDateTime createTime;
+    private LocalDateTime updateTime;
 }

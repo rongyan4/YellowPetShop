@@ -2,6 +2,7 @@ package com.yellow.petshop.service;
 
 import com.yellow.petshop.model.PageResult;
 import com.yellow.petshop.model.comment.CommentVO;
+import com.yellow.petshop.model.comment.CreateCommentDTO;
 
 /**
  * 评论服务接口
@@ -23,4 +24,11 @@ public interface CommentService {
      * @return 评论总数
      */
     Long getCommentCount(Long commodityId);
+    
+    /**
+     * 创建评论
+     * @param userId 用户ID
+     * @param dto 评论DTO
+     */
+    void createComment(Long userId, CreateCommentDTO dto);
 }

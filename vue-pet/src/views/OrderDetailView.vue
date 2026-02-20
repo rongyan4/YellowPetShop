@@ -43,25 +43,30 @@
         </div>
       </div>
 
-      <!-- 商品信息 -->
-      <div class="goods-section">
-        <div class="section-title">
-          <van-icon name="bag-o" />
-          <span>商品信息</span>
-        </div>
-        <div class="goods-list">
-          <div v-for="item in orderDetail.items" :key="item.id" class="goods-item">
-            <img :src="item.commodityPic" :alt="item.commodityName" class="goods-image">
-            <div class="goods-info">
-              <div class="goods-name">{{ item.commodityName }}</div>
-              <div class="goods-bottom">
-                <span class="goods-price">¥{{ item.commodityPrice }}</span>
-                <span class="goods-quantity">x{{ item.quantity }}</span>
+          <!-- 商品信息 -->
+          <div class="goods-section">
+            <div class="section-title">
+              <van-icon name="bag-o" />
+              <span>商品信息</span>
+            </div>
+            <div class="goods-list">
+              <div 
+                v-for="item in orderDetail.items" 
+                :key="item.id" 
+                class="goods-item"
+                @click="goToGoodDetail(item.commodityId)"
+              >
+                <img :src="item.commodityPic" :alt="item.commodityName" class="goods-image">
+                <div class="goods-info">
+                  <div class="goods-name">{{ item.commodityName }}</div>
+                  <div class="goods-bottom">
+                    <span class="goods-price">¥{{ item.commodityPrice }}</span>
+                    <span class="goods-quantity">x{{ item.quantity }}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
       <!-- 订单信息 -->
       <div class="order-info-section">
@@ -249,6 +254,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { showToast, showConfirmDialog } from 'vant';
 import { getOrderDetailSafe, cancelOrderSafe, confirmReceiptSafe, payOrderSafe } from '@/api/order';
 import { getWalletInfoSafe } from '@/api/payment';
+import { saveScrollPosition } from '@/utils/scrollPosition';
 
 const router = useRouter();
 const route = useRoute();
@@ -553,6 +559,13 @@ const goBack = () => {
   router.back();
 };
 
+// 跳转到商品详情
+const goToGoodDetail = (commodityId) => {
+  // 保存当前滚动位置
+  saveScrollPosition(route.path, window.scrollY || window.pageYOffset);
+  router.push(`/good-details?id=${commodityId}`);
+};
+
 onMounted(() => {
   loadOrderDetail();
   loadWalletInfo();
@@ -692,6 +705,14 @@ onUnmounted(() => {
   display: flex;
   gap: 12px;
   margin-bottom: 12px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.goods-item:hover {
+  background-color: #fafafa;
 }
 
 .goods-item:last-child {

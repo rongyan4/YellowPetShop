@@ -20,7 +20,10 @@ public interface CommentMapper extends BaseMapper<Comment> {
      * @param size 每页大小
      * @return 评论列表
      */
-    @Select("SELECT c.*, u.username, u.nickname, u.avatar " +
+    @Select("SELECT c.id, c.commodity_id, c.user_id, c.order_id, c.parent_id, " +
+            "c.star, c.content, c.status, c.is_top, c.like_count, c.reply_count, " +
+            "c.merchant_reply, c.merchant_reply_time, c.create_time, c.update_time, " +
+            "u.username, u.nickname, u.avatar " +
             "FROM comment c " +
             "LEFT JOIN user u ON c.user_id = u.id " +
             "WHERE c.commodity_id = #{commodityId} AND c.status = 'normal' " +

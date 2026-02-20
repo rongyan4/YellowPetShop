@@ -60,9 +60,9 @@
     <div class="review-section" ref="reviewRef">
       <div class="review-header">
         <span class="review-title">评价({{ reviewCount }}+)</span>
-        <span class="review-more" @click="viewAllReviews">
-          查看全部 >
-        </span>
+        <button @click="showCommentForm" class="write-comment-btn">
+          写评价
+        </button>
       </div>
       <div class="review-tags">
         <van-tag plain type="warning">味道好吃 {{ reviewTags.taste }}</van-tag>
@@ -78,6 +78,7 @@
           />
           <div class="user-info">
             <span class="username">{{ review.username }}</span>
+            <van-rate v-model="review.star" :size="12" color="#ffd21e" void-icon="star" void-color="#eee" readonly />
           </div>
         </div>
         <div class="review-content">{{ review.content }}</div>
@@ -90,6 +91,10 @@
             :src="img"
             fit="cover"
           />
+        </div>
+        <div class="merchant-reply" v-if="review.merchantReply">
+          <div class="reply-label">商家回复：</div>
+          <div class="reply-content">{{ review.merchantReply }}</div>
         </div>
       </div>
     </div>
@@ -173,20 +178,62 @@
         </div>
       </div>
     </van-popup>
+
+    <!-- 评论弹窗 -->
+    <van-popup v-model:show="showCommentDialog" position="bottom" round :style="{ maxHeight: '80%' }">
+      <div class="comment-popup">
+        <div class="popup-header">
+          <span class="popup-title">写评价</span>
+          <van-icon name="cross" @click="showCommentDialog = false" />
+        </div>
+        
+        <div class="comment-form">
+          <div class="form-item">
+            <label>评分</label>
+            <van-rate v-model="commentForm.star" :size="24" color="#ffd21e" void-icon="star" void-color="#eee" />
+          </div>
+          
+          <div class="form-item">
+            <label>评价内容</label>
+            <van-field
+              v-model="commentForm.content"
+              rows="4"
+              autosize
+              type="textarea"
+              maxlength="500"
+              placeholder="分享你的使用感受吧~"
+              show-word-limit
+            />
+          </div>
+          
+          <div class="form-item">
+            <label>上传图片（可选）</label>
+            <van-uploader v-model="commentForm.images" multiple :max-count="6" />
+          </div>
+        </div>
+        
+        <div class="popup-footer">
+          <van-button type="primary" block round @click="submitComment">
+            提交评价
+          </van-button>
+        </div>
+      </div>
+    </van-popup>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick, onBeforeUnmount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { showToast, showDialog } from 'vant';
 import GoodDetailsTop from '@/components/good/GoodDetailsTop.vue';
 import GoodDetailsNavi from '@/components/good/GoodDetailsNavi.vue';
 import { getGoodDetailSafe } from '@/api/goods';
-import { getCommentsByPageSafe, getCommentCountSafe } from '@/api/comment';
+import { getCommentsByPageSafe, getCommentCountSafe, createCommentSafe } from '@/api/comment';
 import { addToCartSafe } from '@/api/cart';
 import { addFavoriteSafe, removeFavoriteSafe, checkFavoriteSafe } from '@/api/favorite';
 import { addBrowseHistorySafe } from '@/api/browse';
+import { saveScrollPosition, restoreScrollPosition } from '@/utils/scrollPosition';
 
 const router = useRouter();
 const route = useRoute();
@@ -248,6 +295,82 @@ const isFavorited = ref(false);
 // 数量选择弹窗
 const quantityPopupVisible = ref(false);
 const selectedQuantity = ref(1);
+
+// 评论弹窗
+const showCommentDialog = ref(false);
+const commentForm = ref({
+  star: 5,
+  content: '',
+  images: []
+});
+
+// 显示评论对话框
+const showCommentForm = () => {
+  // 检查是否登录
+  const token = localStorage.getItem('token');
+  if (!token) {
+    showDialog({
+      title: '提示',
+      message: '请先登录',
+      confirmButtonText: '去登录',
+      cancelButtonText: '取消',
+      showCancelButton: true,
+    }).then(() => {
+      router.push('/my');
+    }).catch(() => {});
+    return;
+  }
+  
+  // 重置表单
+  commentForm.value = {
+    star: 5,
+    content: '',
+    images: []
+  };
+  showCommentDialog.value = true;
+};
+
+// 提交评论
+const submitComment = async () => {
+  if (!commentForm.value.content.trim()) {
+    showToast('请输入评论内容');
+    return;
+  }
+  
+  try {
+    // 处理图片URL
+    const imageUrls = commentForm.value.images.map(img => {
+      if (typeof img === 'string') return img;
+      if (img.url) return img.url;
+      if (img.content) return img.content; // base64
+      return '';
+    }).filter(url => url);
+    
+    const result = await createCommentSafe({
+      commodityId: goodsInfo.value.id,
+      orderId: null, // 商品详情页评论不关联订单
+      star: Math.round(commentForm.value.star * 2) / 2, // 保留0.5精度
+      content: commentForm.value.content,
+      images: imageUrls
+    });
+    
+    if (result !== null) {
+      showToast({
+        message: '评论成功',
+        icon: 'success'
+      });
+      showCommentDialog.value = false;
+      // 重新加载评论
+      reviews.value = [];
+      reviewCurrentPage.value = 1;
+      reviewFinished.value = false;
+      loadComments(goodsInfo.value.id);
+      loadCommentCount(goodsInfo.value.id);
+    }
+  } catch (error) {
+    console.error('提交评论失败:', error);
+  }
+};
 
 // 底部操作栏功能
 const goToShop = () => {
@@ -559,8 +682,11 @@ const loadComments = async (goodsId) => {
         id: comment.id,
         username: comment.nickname || comment.username || '匿名用户',
         avatar: comment.avatar || '/images/default_avatar.png',
+        star: comment.star || 5,
         content: comment.content,
-        images: comment.images || []
+        images: comment.images || [],
+        merchantReply: comment.merchantReply,
+        merchantReplyTime: comment.merchantReplyTime
       }));
       
       reviews.value = [...reviews.value, ...newComments];
@@ -604,11 +730,19 @@ onMounted(() => {
   
   // 监听滚动事件
   window.addEventListener('scroll', handleScroll);
+  
+  // 恢复滚动位置
+  restoreScrollPosition(route.path);
 });
 
 // 页面卸载
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
+});
+
+// 页面卸载前保存滚动位置
+onBeforeUnmount(() => {
+  saveScrollPosition(route.path, window.scrollY || window.pageYOffset);
 });
 </script>
 
@@ -729,9 +863,20 @@ onUnmounted(() => {
   color: #333;
 }
 
-.review-more {
+.write-comment-btn {
+  padding: 6px 16px;
+  background: linear-gradient(135deg, #ff6034 0%, #ff8f6b 100%);
+  color: white;
+  border: none;
+  border-radius: 16px;
   font-size: 13px;
-  color: #ff6034;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.write-comment-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 96, 52, 0.3);
 }
 
 .review-tags {
@@ -772,6 +917,27 @@ onUnmounted(() => {
 .review-images {
   display: flex;
   gap: 8px;
+}
+
+.merchant-reply {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 3px solid #ff6034;
+}
+
+.reply-label {
+  font-size: 12px;
+  color: #ff6034;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.reply-content {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
 }
 
 /* 商品详情 */
@@ -955,6 +1121,28 @@ onUnmounted(() => {
 
 .popup-footer {
   margin-top: 20px;
+}
+
+/* 评论弹窗样式 */
+.comment-popup {
+  padding: 20px;
+  background-color: #fff;
+}
+
+.comment-form {
+  margin: 20px 0;
+}
+
+.form-item {
+  margin-bottom: 20px;
+}
+
+.form-item label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
 }
 
 

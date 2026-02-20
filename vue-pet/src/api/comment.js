@@ -1,4 +1,4 @@
-import { get, safeRequest, safeRequestData } from '@/utils/request';
+import { get, post, safeRequest, safeRequestData } from '@/utils/request';
 
 /**
  * 分页获取商品评论列表
@@ -38,4 +38,22 @@ export const getCommentCount = (commodityId) => {
  */
 export const getCommentCountSafe = (commodityId) => {
   return safeRequestData(getCommentCount(commodityId));
+};
+
+/**
+ * 创建评论
+ * @param {Object} data 评论数据
+ * @returns {Promise} 返回创建结果响应对象
+ */
+export const createComment = (data) => {
+  return post('/comments/create', data);
+};
+
+/**
+ * 安全创建评论
+ * @param {Object} data 评论数据
+ * @returns {Promise} 成功返回结果，失败返回 null
+ */
+export const createCommentSafe = (data) => {
+  return safeRequestData(createComment(data));
 };

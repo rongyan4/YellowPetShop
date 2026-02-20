@@ -21,10 +21,12 @@ public class Comment {
     private Long id;
     private Long commodityId;
     private Long userId;
-    private Long orderId;
+    private Long orderId;  // 可为空，用户可以在商品详情页直接评论
     private Long parentId;
     private Integer star;
     private String content;
+    private String merchantReply;
+    private LocalDateTime merchantReplyTime;
     private String status;
     private Boolean isTop;
     private Integer likeCount;

@@ -30,6 +30,8 @@ public class CommentVO {
     private Boolean isTop;
     private Integer likeCount;
     private Integer replyCount;
+    private String merchantReply;
+    private LocalDateTime merchantReplyTime;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     private List<String> images;

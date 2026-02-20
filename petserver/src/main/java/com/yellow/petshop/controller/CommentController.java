@@ -3,12 +3,12 @@ package com.yellow.petshop.controller;
 import com.yellow.petshop.model.PageResult;
 import com.yellow.petshop.model.Result;
 import com.yellow.petshop.model.comment.CommentVO;
+import com.yellow.petshop.model.comment.CreateCommentDTO;
 import com.yellow.petshop.service.CommentService;
+import com.yellow.petshop.util.JwtUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * 评论控制器
@@ -50,5 +50,35 @@ public class CommentController {
     public Result<Long> getCommentCount(@RequestParam Long commodityId) {
         Long count = commentService.getCommentCount(commodityId);
         return Result.success(count);
+    }
+    
+    /**
+     * 创建评论
+     * 访问路径: POST /api/comments/create
+     *
+     * @param dto 评论DTO
+     * @param request HTTP请求
+     * @return 结果
+     */
+    @PostMapping("/create")
+    public Result<String> createComment(@RequestBody CreateCommentDTO dto, HttpServletRequest request) {
+        try {
+            Long userId = getUserIdFromToken(request);
+            commentService.createComment(userId, dto);
+            return Result.success("评论成功");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 从Token中获取用户ID
+     */
+    private Long getUserIdFromToken(HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+        return JwtUtil.getUserIdFromToken(token);
     }
 }

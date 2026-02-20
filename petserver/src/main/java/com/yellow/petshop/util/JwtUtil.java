@@ -15,7 +15,7 @@ public class JwtUtil {
     private long expirationTime = 1000 * 60 * 60 * 24 * 7;
     private String secret = "2F9s7k8d6j5g4h3f2d1s0a9s8d7f6g5h4j3k2l1m0n9b8v7c6x5z4a8s7d6f5g4h3j2=";
 
-    //生成token
+    //生成token（使用User对象）
     public String generateToken(User user) {
         SecretKey key = Keys.hmacShaKeyFor(secret.getBytes());
         return Jwts.builder()
@@ -26,6 +26,24 @@ public class JwtUtil {
                 .setSubject(user.getId().toString())
                 .claim("username", user.getUsername())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
+                .setId(UUID.randomUUID().toString())
+                //Signature
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+    
+    //生成token（使用ID和用户名）
+    public static String generateToken(Long userId, String username) {
+        JwtUtil jwtUtil = new JwtUtil();
+        SecretKey key = Keys.hmacShaKeyFor(jwtUtil.secret.getBytes());
+        return Jwts.builder()
+                //Header
+                .setHeaderParam("typ","JWT")
+                .setHeaderParam("alg","HS256")
+                //Payload
+                .setSubject(userId.toString())
+                .claim("username", username)
+                .setExpiration(new Date(System.currentTimeMillis() + jwtUtil.expirationTime))
                 .setId(UUID.randomUUID().toString())
                 //Signature
                 .signWith(key, SignatureAlgorithm.HS256)

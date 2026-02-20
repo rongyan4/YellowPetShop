@@ -33,8 +33,8 @@
               :key="order.id" 
               class="order-card"
             >
-              <!-- 订单头部 -->
-              <div class="order-header">
+              <!-- 订单头部 - 可点击跳转到订单详情 -->
+              <div class="order-header" @click="viewOrderDetail(order.id)">
                 <div class="order-info">
                   <span class="order-sn">订单号: {{ order.orderSn }}</span>
                   <span class="order-time">{{ formatTime(order.createTime) }}</span>
@@ -55,11 +55,12 @@
               </div>
 
               <!-- 订单商品列表 -->
-              <div class="order-goods" @click="viewOrderDetail(order.id)">
+              <div class="order-goods">
                 <div 
                   v-for="item in order.items" 
                   :key="item.id"
                   class="goods-item"
+                  @click="goToGoodDetail(item.commodityId)"
                 >
                   <img :src="item.commodityPic" :alt="item.commodityName" class="goods-image">
                   <div class="goods-info">
@@ -97,6 +98,14 @@
                   删除订单
                 </van-button>
                 <van-button 
+                  v-if="order.status === 'COMPLETED'" 
+                  size="small" 
+                  plain
+                  @click="goToComment(order.id)"
+                >
+                  评价
+                </van-button>
+                <van-button 
                   v-if="order.status === 'PENDING'" 
                   size="small" 
                   type="primary"
@@ -128,13 +137,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, onUnmounted, onBeforeUnmount } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { showToast, showConfirmDialog } from 'vant';
 import { getOrderListSafe, cancelOrderSafe, deleteOrderSafe, confirmReceiptSafe } from '@/api/order';
 import { Tab, Tabs } from 'vant';
+import { saveScrollPosition, restoreScrollPosition } from '@/utils/scrollPosition';
 
 const router = useRouter();
+const route = useRoute();
 
 // 标签列表
 const tabList = ref([
@@ -273,6 +284,9 @@ const onLoad = () => {
 
 // 查看订单详情
 const viewOrderDetail = (orderId) => {
+  // 保存当前滚动位置和标签页状态
+  saveScrollPosition(route.path, window.scrollY || window.pageYOffset);
+  sessionStorage.setItem('myOrdersActiveTab', activeTabIndex.value.toString());
   router.push(`/order/detail/${orderId}`);
 };
 
@@ -310,8 +324,27 @@ const deleteOrder = async (orderId) => {
 
 // 去支付
 const payOrder = (order) => {
+  // 保存当前滚动位置和标签页状态
+  saveScrollPosition(route.path, window.scrollY || window.pageYOffset);
+  sessionStorage.setItem('myOrdersActiveTab', activeTabIndex.value.toString());
   // 跳转到订单详情页进行支付
   router.push(`/order/detail/${order.id}`);
+};
+
+// 去评价
+const goToComment = (orderId) => {
+  // 保存当前滚动位置和标签页状态
+  saveScrollPosition(route.path, window.scrollY || window.pageYOffset);
+  sessionStorage.setItem('myOrdersActiveTab', activeTabIndex.value.toString());
+  router.push(`/order/comment/${orderId}`);
+};
+
+// 跳转到商品详情
+const goToGoodDetail = (commodityId) => {
+  // 保存当前滚动位置和标签页状态
+  saveScrollPosition(route.path, window.scrollY || window.pageYOffset);
+  sessionStorage.setItem('myOrdersActiveTab', activeTabIndex.value.toString());
+  router.push(`/good-details?id=${commodityId}`);
 };
 
 // 确认收货
@@ -392,7 +425,17 @@ const formatCountdown = (milliseconds) => {
 };
 
 onMounted(() => {
+  // 恢复标签页状态
+  const savedTab = sessionStorage.getItem('myOrdersActiveTab');
+  if (savedTab !== null) {
+    activeTabIndex.value = parseInt(savedTab);
+    activeTab.value = tabList.value[activeTabIndex.value].name;
+  }
+  
   loadOrders();
+  
+  // 恢复滚动位置
+  restoreScrollPosition(route.path);
 });
 
 onUnmounted(() => {
@@ -400,6 +443,11 @@ onUnmounted(() => {
   if (countdownTimer) {
     clearInterval(countdownTimer);
   }
+});
+
+// 页面卸载前保存滚动位置
+onBeforeUnmount(() => {
+  saveScrollPosition(route.path, window.scrollY || window.pageYOffset);
 });
 </script>
 
@@ -550,16 +598,33 @@ onUnmounted(() => {
   color: #999;
 }
 
+/* 订单头部可点击 */
+.order-header {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.order-header:hover {
+  background-color: #f0f0f0;
+}
+
 /* 订单商品 */
 .order-goods {
   padding: 12px 16px;
-  cursor: pointer;
 }
 
 .goods-item {
   display: flex;
   gap: 12px;
   margin-bottom: 12px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.goods-item:hover {
+  background-color: #fafafa;
 }
 
 .goods-item:last-child {

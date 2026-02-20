@@ -9,7 +9,7 @@ public class EncryptTest { // 类名建议首字母大写，符合Java规范
 
     public static void main(String[] args) {
         // 1. 定义明文密码（rawPassword需要先赋值）
-        String rawPassword = "123456"; // 示例密码
+        String rawPassword = "admin123"; // 示例密码
 
         // 2. 正确调用BCrypt的哈希方法
         String hashedPassword = BCrypt.hashpw(rawPassword, BCrypt.gensalt(COST_FACTOR));

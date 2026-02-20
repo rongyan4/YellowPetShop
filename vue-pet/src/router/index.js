@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { getMerchantToken } from "@/utils/merchantAuth";
 
 const routes = [
   {
@@ -108,6 +109,13 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: "/order/comment/:id",
+    name: "order-comment",
+    component: () =>
+      import("../views/OrderCommentView.vue"),
+    meta: { requiresAuth: true }
+  },
+  {
     path: "/address/list",
     name: "address-list",
     component: () =>
@@ -121,6 +129,60 @@ const routes = [
       import("../views/AddressEditView.vue"),
     meta: { requiresAuth: true }
   },
+  // ==================== 商家端路由 ====================
+  {
+    path: "/merchant/login",
+    name: "merchant-login",
+    component: () => import("../views/merchant/MerchantLogin.vue"),
+    meta: { requiresMerchantAuth: false }
+  },
+  {
+    path: "/merchant",
+    component: () => import("../views/merchant/MerchantLayout.vue"),
+    meta: { requiresMerchantAuth: true },
+    children: [
+      {
+        path: "",
+        redirect: "/merchant/dashboard"
+      },
+      {
+        path: "dashboard",
+        name: "merchant-dashboard",
+        component: () => import("../views/merchant/Dashboard.vue"),
+        meta: { requiresMerchantAuth: true }
+      },
+      {
+        path: "goods",
+        name: "merchant-goods",
+        component: () => import("../views/merchant/GoodsManagement.vue"),
+        meta: { requiresMerchantAuth: true }
+      },
+      {
+        path: "member",
+        name: "merchant-member",
+        component: () => import("../views/merchant/MemberManagement.vue"),
+        meta: { requiresMerchantAuth: true }
+      },
+      {
+        path: "order",
+        name: "merchant-order",
+        component: () => import("../views/merchant/OrderManagement.vue"),
+        meta: { requiresMerchantAuth: true }
+      },
+      {
+        path: "orders/:id",
+        name: "merchant-order-detail",
+        component: () => import("../views/merchant/OrderDetail.vue"),
+        meta: { requiresMerchantAuth: true }
+      },
+      {
+        path: "products/:id/comments",
+        name: "merchant-product-comments",
+        component: () => import("../views/merchant/ProductComments.vue"),
+        meta: { requiresMerchantAuth: true }
+      }
+    ]
+  }
 ];
 
 const router = createRouter({
@@ -128,9 +190,17 @@ const router = createRouter({
   routes,
 });
 
-// 路由守卫 - 已移除强制跳转登录页的逻辑
-// 购物车和个人中心页面会自己处理登录弹窗
+// 路由守卫
 router.beforeEach((to, from, next) => {
+  // 商家端路由守卫
+  if (to.meta.requiresMerchantAuth) {
+    const merchantToken = getMerchantToken();
+    if (!merchantToken) {
+      next('/merchant/login');
+      return;
+    }
+  }
+  
   next();
 });
 

@@ -1,6 +1,12 @@
 <template>
   <div class="top-bar-main">
     <div class="top-bar-input" @click="handleSearchClick">
+      <!-- 清空按钮（输入框不为空时显示） -->
+      <i 
+        v-if="searchKeyword.trim()" 
+        class="iconfont icon-guanbi clear-btn" 
+        @click.stop="handleClear"
+      ></i>
       <input 
         v-model="searchKeyword" 
         type="text" 
@@ -20,14 +26,13 @@
 <script setup>
 import { ref, defineEmits, defineExpose } from 'vue';
 
-const emit = defineEmits(['switchToSearch', 'search']);
+const emit = defineEmits(['switchToSearch', 'search', 'clear', 'backToHome']);
 
 const searchKeyword = ref('');
 
 // 点击搜索框区域，切换到搜索标签
 const handleSearchClick = () => {
   emit('switchToSearch');
-  // 如果搜索框为空，不执行搜索，只切换标签
 };
 
 // 执行搜索（点击搜索按钮或按回车）
@@ -42,8 +47,16 @@ const handleSearch = () => {
     console.log('执行搜索:', searchKeyword.value.trim());
     emit('search', searchKeyword.value.trim());
   } else {
-    console.log('搜索框为空，不执行搜索');
+    // 搜索框为空时，直接退回原界面
+    console.log('搜索框为空，退回原界面');
+    emit('backToHome');
   }
+};
+
+// 清空搜索框
+const handleClear = () => {
+  searchKeyword.value = '';
+  emit('clear');
 };
 
 // 设置搜索关键词（供外部调用）
@@ -51,7 +64,7 @@ const setSearchKeyword = (keyword) => {
   searchKeyword.value = keyword;
 };
 
-// 暴露方法给父组件
+// 暴露方法和属性给父组件
 defineExpose({
   setSearchKeyword,
   searchKeyword
@@ -83,6 +96,23 @@ defineExpose({
     flex: 1;
     margin-right: .2133rem;
     cursor: pointer;
+    position: relative;
+    
+    .clear-btn {
+      font-size: .4rem;
+      color: #999;
+      cursor: pointer;
+      margin-right: .2rem;
+      transition: color 0.2s;
+      
+      &:hover {
+        color: #666;
+      }
+      
+      &:active {
+        transform: scale(0.9);
+      }
+    }
     
     .search-input {
       flex: 1;

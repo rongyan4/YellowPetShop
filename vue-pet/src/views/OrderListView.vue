@@ -14,10 +14,9 @@
           v-for="order in orders" 
           :key="order.id" 
           class="order-item"
-          @click="viewOrderDetail(order.id)"
         >
-          <!-- 订单头部 -->
-          <div class="order-header">
+          <!-- 订单头部 - 可点击跳转到订单详情 -->
+          <div class="order-header" @click="viewOrderDetail(order.id)">
             <span class="order-sn">订单号: {{ order.orderSn }}</span>
             <span class="order-status" :class="getStatusClass(order.status)">
               {{ order.statusText }}
@@ -30,6 +29,7 @@
               v-for="item in order.items" 
               :key="item.id"
               class="order-item-detail"
+              @click="goToGoodDetail(item.commodityId)"
             >
               <img :src="item.commodityPic" :alt="item.commodityName" class="item-image">
               <div class="item-info">
@@ -64,6 +64,14 @@
                 @click.stop="deleteOrder(order.id)"
               >
                 删除订单
+              </van-button>
+              <van-button 
+                v-if="order.status === 'COMPLETED'" 
+                size="small" 
+                plain
+                @click.stop="goToComment(order.id)"
+              >
+                评价
               </van-button>
               <van-button 
                 v-if="order.status === 'PENDING'" 
@@ -115,15 +123,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useUserStore } from '@/stores/user';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import TabBar from '@/components/TabBar.vue';
 import { getOrderListSafe, cancelOrderSafe, deleteOrderSafe } from '@/api/order';
 import { showToast, showConfirmDialog } from 'vant';
+import { saveScrollPosition, restoreScrollPosition } from '@/utils/scrollPosition';
 
 const userStore = useUserStore();
 const router = useRouter();
+const route = useRoute();
 
 // 登录状态
 const isLoggedIn = computed(() => userStore.isLoggedIn);
@@ -169,9 +179,9 @@ const getStatusClass = (status) => {
 
 // 查看订单详情
 const viewOrderDetail = (orderId) => {
-  console.log('查看订单详情:', orderId);
-  showToast('订单详情页面开发中');
-  // router.push(`/order/detail/${orderId}`);
+  // 保存当前滚动位置
+  saveScrollPosition(route.path, window.scrollY || window.pageYOffset);
+  router.push(`/order/detail/${orderId}`);
 };
 
 // 取消订单
@@ -212,6 +222,20 @@ const payOrder = (orderId) => {
   showToast('支付功能开发中');
 };
 
+// 去评价
+const goToComment = (orderId) => {
+  // 保存当前滚动位置
+  saveScrollPosition(route.path, window.scrollY || window.pageYOffset);
+  router.push(`/order/comment/${orderId}`);
+};
+
+// 跳转到商品详情
+const goToGoodDetail = (commodityId) => {
+  // 保存当前滚动位置
+  saveScrollPosition(route.path, window.scrollY || window.pageYOffset);
+  router.push(`/good-details?id=${commodityId}`);
+};
+
 // 返回
 const goBack = () => {
   router.back();
@@ -229,6 +253,13 @@ const goToLogin = () => {
 
 onMounted(() => {
   loadOrders();
+  // 恢复滚动位置
+  restoreScrollPosition(route.path);
+});
+
+// 页面卸载前保存滚动位置
+onBeforeUnmount(() => {
+  saveScrollPosition(route.path, window.scrollY || window.pageYOffset);
 });
 </script>
 
@@ -330,6 +361,16 @@ onMounted(() => {
   color: #999;
 }
 
+/* 订单头部可点击 */
+.order-header {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.order-header:hover {
+  background-color: #fafafa;
+}
+
 /* 订单商品 */
 .order-items {
   padding: 12px 16px;
@@ -339,6 +380,14 @@ onMounted(() => {
   display: flex;
   gap: 12px;
   margin-bottom: 12px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.order-item-detail:hover {
+  background-color: #fafafa;
 }
 
 .order-item-detail:last-child {

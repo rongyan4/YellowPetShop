@@ -1,0 +1,124 @@
+package com.yellow.petshop.controller;
+
+import com.yellow.petshop.model.PageResult;
+import com.yellow.petshop.model.Result;
+import com.yellow.petshop.model.home.CommodityInfo;
+import com.yellow.petshop.service.MerchantGoodsService;
+import com.yellow.petshop.util.JwtUtil;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * 商家商品管理控制器
+ */
+@RestController
+@RequestMapping("/api/merchant/goods")
+public class MerchantGoodsController {
+
+    @Autowired
+    private MerchantGoodsService goodsService;
+
+    /**
+     * 分页查询商品列表
+     */
+    @GetMapping("/list")
+    public Result<PageResult<CommodityInfo>> getGoodsList(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String keyword) {
+        try {
+            PageResult<CommodityInfo> result = goodsService.getGoodsList(page, pageSize, keyword);
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 添加商品
+     */
+    @PostMapping("/add")
+    public Result<String> addGoods(@RequestBody CommodityInfo commodity, HttpServletRequest request) {
+        try {
+            Long merchantId = getMerchantIdFromToken(request);
+            String ipAddress = getIpAddress(request);
+            goodsService.addGoods(commodity, merchantId, ipAddress);
+            return Result.success("商品添加成功");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 更新商品
+     */
+    @PutMapping("/update")
+    public Result<String> updateGoods(@RequestBody CommodityInfo commodity, HttpServletRequest request) {
+        try {
+            Long merchantId = getMerchantIdFromToken(request);
+            String ipAddress = getIpAddress(request);
+            goodsService.updateGoods(commodity, merchantId, ipAddress);
+            return Result.success("商品更新成功");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 删除商品
+     */
+    @DeleteMapping("/delete/{id}")
+    public Result<String> deleteGoods(@PathVariable Long id, HttpServletRequest request) {
+        try {
+            Long merchantId = getMerchantIdFromToken(request);
+            String ipAddress = getIpAddress(request);
+            goodsService.deleteGoods(id, merchantId, ipAddress);
+            return Result.success("商品删除成功");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 批量删除商品
+     */
+    @DeleteMapping("/batch-delete")
+    public Result<String> batchDeleteGoods(@RequestBody List<Long> ids, HttpServletRequest request) {
+        try {
+            Long merchantId = getMerchantIdFromToken(request);
+            String ipAddress = getIpAddress(request);
+            goodsService.batchDeleteGoods(ids, merchantId, ipAddress);
+            return Result.success("商品批量删除成功");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 从Token中获取商家ID
+     */
+    private Long getMerchantIdFromToken(HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+        return JwtUtil.getUserIdFromToken(token);
+    }
+
+    /**
+     * 获取客户端IP地址
+     */
+    private String getIpAddress(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        return ip;
+    }
+}

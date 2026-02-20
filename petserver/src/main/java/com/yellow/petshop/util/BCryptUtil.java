@@ -7,6 +7,11 @@ public class BCryptUtil {
     public static String encrypt(String rawPassword) {
         return BCrypt.hashpw(rawPassword, BCrypt.gensalt());
     }
+    
+    // 加密密码（别名方法）
+    public static String hashPassword(String rawPassword) {
+        return encrypt(rawPassword);
+    }
 
     public static boolean verify(String rawPassword, String encryptedPassword) {
         return BCrypt.checkpw(rawPassword, encryptedPassword);

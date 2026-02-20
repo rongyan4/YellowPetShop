@@ -27,8 +27,16 @@ service.interceptors.request.use(
     console.log('Data:', config.data);
     console.log('Timestamp:', new Date().toISOString());
     
-    // 从 localStorage 获取 token
-    const token = localStorage.getItem('token');
+    // 判断是否是商家端请求
+    const isMerchantRequest = config.url.includes('/merchant');
+    
+    // 根据请求类型选择对应的 token
+    let token;
+    if (isMerchantRequest) {
+      token = localStorage.getItem('merchant_token');
+    } else {
+      token = localStorage.getItem('token');
+    }
     
     // 如果 token 存在，添加到请求头
     if (token) {
@@ -93,11 +101,21 @@ service.interceptors.response.use(
           errorMsg = '请求参数错误';
           break;
         case 401:
-          // 清除本地存储的 token 和用户信息
-          localStorage.removeItem('token');
-          localStorage.removeItem('userInfo');
+          // 判断是否是商家端请求
+          const isMerchantRequest = error.config.url.includes('/merchant');
+          
+          if (isMerchantRequest) {
+            // 清除商家端 token
+            localStorage.removeItem('merchant_token');
+            localStorage.removeItem('merchant_info');
+            // 跳转到商家登录页
+            window.location.href = '/merchant/login';
+          } else {
+            // 清除客户端 token 和用户信息
+            localStorage.removeItem('token');
+            localStorage.removeItem('userInfo');
+          }
           // 不显示"登录已过期"的提示，让各个页面自己处理登录逻辑
-          // 购物页面等不需要登录的页面不会受到影响
           shouldShowToast = false;
           break;
         case 403:
