@@ -280,6 +280,16 @@ public class OrderServiceImpl implements OrderService {
             throw new RuntimeException("该订单状态不允许取消");
         }
         
+        // 查询订单商品明细，恢复库存
+        List<OrderItem> items = orderItemMapper.selectByOrderId(orderId);
+        for (OrderItem item : items) {
+            // 恢复库存
+            int result = commodityMapper.increaseStock(item.getCommodityId(), item.getQuantity());
+            if (result == 0) {
+                throw new RuntimeException("恢复库存失败：" + item.getCommodityName());
+            }
+        }
+        
         order.setStatus("CANCELLED");
         order.setUpdateTime(LocalDateTime.now());
         return orderMapper.updateById(order) > 0;
@@ -323,6 +333,16 @@ public class OrderServiceImpl implements OrderService {
         // 只有运输中状态的订单可以确认收货
         if (!"SHIPPED".equals(order.getStatus())) {
             throw new RuntimeException("该订单状态不允许确认收货");
+        }
+        
+        // 查询订单商品明细，增加销量
+        List<OrderItem> items = orderItemMapper.selectByOrderId(orderId);
+        for (OrderItem item : items) {
+            // 增加销量
+            int result = commodityMapper.increaseSold(item.getCommodityId(), item.getQuantity());
+            if (result == 0) {
+                throw new RuntimeException("更新销量失败：" + item.getCommodityName());
+            }
         }
         
         order.setStatus("COMPLETED");
@@ -457,6 +477,16 @@ public class OrderServiceImpl implements OrderService {
         order.setPayTime(LocalDateTime.now());
         order.setUpdateTime(LocalDateTime.now());
         orderMapper.updateById(order);
+        
+        // 支付成功后，扣减商品库存
+        List<OrderItem> items = orderItemMapper.selectByOrderId(orderId);
+        for (OrderItem item : items) {
+            int result = commodityMapper.decreaseStock(item.getCommodityId(), item.getQuantity());
+            if (result == 0) {
+                // 库存不足，回滚事务
+                throw new RuntimeException("商品库存不足：" + item.getCommodityName());
+            }
+        }
         
         return true;
     }

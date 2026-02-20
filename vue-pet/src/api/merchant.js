@@ -191,3 +191,62 @@ export function deleteProduct(productId) {
     method: 'delete'
   });
 }
+
+/**
+ * 获取分类列表
+ */
+export function getCategoryList() {
+  return request({
+    url: '/merchant/categories',
+    method: 'get'
+  });
+}
+
+/**
+ * 添加分类
+ */
+export function addCategory(data) {
+  return request({
+    url: '/merchant/categories',
+    method: 'post',
+    data
+  });
+}
+
+/**
+ * 更新分类
+ */
+export function updateCategory(categoryId, data) {
+  return request({
+    url: `/merchant/categories/${categoryId}`,
+    method: 'put',
+    data
+  });
+}
+
+/**
+ * 删除分类
+ */
+export function deleteCategory(categoryId) {
+  return request({
+    url: `/merchant/categories/${categoryId}`,
+    method: 'delete'
+  });
+}
+
+/**
+ * 上传商品图片
+ */
+export function uploadGoodsImage(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  return request({
+    url: '/merchant/goods/upload-image',
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+}

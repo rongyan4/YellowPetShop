@@ -33,6 +33,7 @@
             <th>商品名称</th>
             <th>分类</th>
             <th>价格</th>
+            <th>库存</th>
             <th>销量</th>
             <th>状态</th>
             <th style="width: 200px;">操作</th>
@@ -49,6 +50,11 @@
             </td>
             <td>{{ item.categoryName || '-' }}</td>
             <td class="price">¥{{ item.price }}</td>
+            <td>
+              <span :class="{ 'low-stock': item.stock < 10 }">
+                {{ item.stock || 0 }}
+              </span>
+            </td>
             <td>{{ item.sold || 0 }}</td>
             <td>
               <span 
@@ -92,6 +98,33 @@
       </button>
     </div>
 
+    <!-- 图片裁剪对话框 -->
+    <van-popup v-model:show="showCropperDialog" position="center" :style="{ width: '90%', maxWidth: '600px', borderRadius: '16px' }">
+      <div class="dialog">
+        <div class="dialog-header">
+          <h3>裁剪图片</h3>
+          <button @click="closeCropper" class="close-btn">×</button>
+        </div>
+        <div class="dialog-body">
+          <div class="cropper-container">
+            <img ref="cropperImageElement" :src="cropperImage" class="cropper-image" />
+          </div>
+          <div class="cropper-tip">
+            <p>💡 操作提示：</p>
+            <ul>
+              <li>鼠标滚轮：缩放图片</li>
+              <li>拖动图片：调整位置</li>
+              <li>拖动裁剪框：调整裁剪区域</li>
+            </ul>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button @click="closeCropper" class="btn-cancel">取消</button>
+          <button @click="confirmCrop" class="btn-confirm">确定裁剪</button>
+        </div>
+      </div>
+    </van-popup>
+
     <!-- 添加/编辑对话框 -->
     <van-popup v-model:show="showAddDialog" position="center" :style="{ width: '90%', maxWidth: '600px', borderRadius: '16px' }">
       <div class="dialog">
@@ -101,16 +134,85 @@
         </div>
         <div class="dialog-body">
           <div class="form-group">
-            <label>商品名称</label>
+            <label>商品名称 <span class="required">*</span></label>
             <input v-model="formData.name" type="text" placeholder="请输入商品名称" />
           </div>
-          <div class="form-group">
-            <label>商品价格</label>
-            <input v-model="formData.price" type="number" step="0.01" placeholder="请输入价格" />
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>商品分类</label>
+              <select v-model="formData.categoryId" class="form-select">
+                <option :value="null">未分类</option>
+                <option v-for="cat in categoryList" :key="cat.id" :value="cat.id">
+                  {{ cat.name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>销售单位</label>
+              <input v-model="formData.unit" type="text" placeholder="如：件、盒、袋" />
+            </div>
           </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>商品价格 <span class="required">*</span></label>
+              <input v-model="formData.price" type="number" step="0.01" placeholder="请输入价格" />
+            </div>
+            <div class="form-group">
+              <label>库存数量 <span class="required">*</span></label>
+              <input v-model="formData.stock" type="number" placeholder="请输入库存" />
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>发货地</label>
+              <input v-model="formData.shippingOrigin" type="text" placeholder="如：上海" />
+            </div>
+            <div class="form-group">
+              <label>邮费（元）</label>
+              <input v-model="formData.postage" type="number" step="0.01" placeholder="0表示包邮" />
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>商品主图</label>
+            <div class="image-upload-area">
+              <div v-if="formData.mainPicUrl" class="uploaded-image">
+                <img :src="getImageUrl(formData.mainPicUrl)" alt="主图预览" />
+                <div class="image-actions">
+                  <button type="button" @click="handleReupload" class="btn-reupload">重新上传</button>
+                  <button type="button" @click="formData.mainPicUrl = ''" class="btn-remove">删除</button>
+                </div>
+              </div>
+              <div v-else class="upload-placeholder" @click="triggerFileInput">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <span>点击上传图片</span>
+                <span class="upload-tip">建议尺寸：1:1，支持jpg、png格式，最大5MB</span>
+              </div>
+              <input 
+                ref="fileInput" 
+                type="file" 
+                accept="image/*" 
+                @change="handleFileSelect" 
+                style="display: none;"
+              />
+            </div>
+          </div>
+          
           <div class="form-group">
             <label>商品描述</label>
-            <textarea v-model="formData.description" placeholder="请输入商品描述" rows="3"></textarea>
+            <textarea v-model="formData.msg" placeholder="请输入商品简短描述" rows="2"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>商品详情（支持HTML）</label>
+            <textarea v-model="formData.detail" placeholder="请输入商品详细信息，支持HTML格式" rows="6"></textarea>
           </div>
         </div>
         <div class="dialog-footer">
@@ -123,7 +225,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { 
   updateProductStatus, 
@@ -131,7 +233,9 @@ import {
   getProductList,
   addProduct,
   updateProduct,
-  deleteProduct 
+  deleteProduct,
+  getCategoryList,
+  uploadGoodsImage
 } from '@/api/merchant';
 import { showConfirmDialog, showSuccessToast, showFailToast, showToast } from 'vant';
 
@@ -139,19 +243,43 @@ const router = useRouter();
 
 const searchKeyword = ref('');
 const goodsList = ref([]);
+const categoryList = ref([]);
 const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
 const totalPages = ref(0);
 
 const showAddDialog = ref(false);
+const showCropperDialog = ref(false);
 const editingGoods = ref(null);
+const fileInput = ref(null);
+const cropperImageElement = ref(null);
+const cropperImage = ref('');
+let cropperInstance = null;
+
 const formData = ref({
   name: '',
+  categoryId: null,
   price: '',
   stock: '',
-  description: ''
+  unit: '',
+  shippingOrigin: '上海',
+  postage: 0,
+  mainPicUrl: '',
+  msg: '',
+  detail: ''
 });
+
+const loadCategoryList = async () => {
+  try {
+    const result = await getCategoryList();
+    if (result && result.code === 200) {
+      categoryList.value = result.data || [];
+    }
+  } catch (error) {
+    console.error('加载分类列表失败:', error);
+  }
+};
 
 const loadGoodsList = async () => {
   try {
@@ -196,8 +324,15 @@ const handleEdit = (item) => {
   formData.value = {
     id: item.id,
     name: item.name,
+    categoryId: item.categoryId,
     price: item.price,
-    description: item.msg || ''
+    stock: item.stock || 0,
+    unit: item.unit || '',
+    shippingOrigin: item.shippingOrigin || '上海',
+    postage: item.postage || 0,
+    mainPicUrl: item.mainPicUrl || '',
+    msg: item.msg || '',
+    detail: item.detail || ''
   };
   showAddDialog.value = true;
 };
@@ -245,15 +380,27 @@ const handleViewComments = (item) => {
 
 const handleSubmit = async () => {
   if (!formData.value.name || !formData.value.price) {
-    showFailToast('请填写完整信息');
+    showFailToast('请填写商品名称和价格');
+    return;
+  }
+  
+  if (!formData.value.stock && formData.value.stock !== 0) {
+    showFailToast('请填写库存数量');
     return;
   }
 
   try {
     const data = {
       name: formData.value.name,
+      categoryId: formData.value.categoryId,
       price: parseFloat(formData.value.price),
-      msg: formData.value.description || ''
+      stock: parseInt(formData.value.stock) || 0,
+      unit: formData.value.unit || '',
+      shippingOrigin: formData.value.shippingOrigin || '上海',
+      postage: parseFloat(formData.value.postage) || 0,
+      mainPicUrl: formData.value.mainPicUrl || '',
+      msg: formData.value.msg || '',
+      detail: formData.value.detail || ''
     };
     
     let result;
@@ -282,12 +429,174 @@ const closeDialog = () => {
   editingGoods.value = null;
   formData.value = {
     name: '',
+    categoryId: null,
     price: '',
-    description: ''
+    stock: '',
+    unit: '',
+    shippingOrigin: '上海',
+    postage: 0,
+    mainPicUrl: '',
+    msg: '',
+    detail: ''
   };
 };
 
+// 图片上传相关
+const triggerFileInput = () => {
+  fileInput.value?.click();
+};
+
+const handleReupload = () => {
+  fileInput.value?.click();
+};
+
+const handleFileSelect = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  // 验证文件类型
+  if (!file.type.startsWith('image/')) {
+    showToast('请选择图片文件');
+    return;
+  }
+  
+  // 验证文件大小（限制5MB）
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('图片大小不能超过5MB');
+    return;
+  }
+  
+  // 读取文件并显示裁剪器
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    cropperImage.value = e.target.result;
+    showCropperDialog.value = true;
+    
+    // 等待DOM更新后初始化裁剪器
+    nextTick(() => {
+      initCropper();
+    });
+  };
+  reader.readAsDataURL(file);
+  
+  // 清空input，允许重复选择同一文件
+  event.target.value = '';
+};
+
+const initCropper = async () => {
+  if (!cropperImageElement.value) return;
+  
+  // 动态导入 cropperjs
+  try {
+    const { default: Cropper } = await import('cropperjs');
+    
+    // 动态加载 CSS
+    if (!document.getElementById('cropper-css')) {
+      const link = document.createElement('link');
+      link.id = 'cropper-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css';
+      document.head.appendChild(link);
+    }
+    
+    // 销毁旧的实例
+    if (cropperInstance) {
+      cropperInstance.destroy();
+    }
+    
+    // 创建新的裁剪器实例
+    cropperInstance = new Cropper(cropperImageElement.value, {
+      aspectRatio: 1, // 1:1 比例
+      viewMode: 1, // 限制裁剪框在画布内
+      dragMode: 'move', // 拖动模式：移动图片
+      autoCropArea: 0.8, // 自动裁剪区域占比
+      restore: false,
+      guides: true, // 显示网格线
+      center: true, // 显示中心指示器
+      highlight: true,
+      cropBoxMovable: true, // 裁剪框可移动
+      cropBoxResizable: true, // 裁剪框可调整大小
+      toggleDragModeOnDblclick: true, // 双击切换拖动模式
+      background: true,
+      modal: true,
+      responsive: true,
+      checkOrientation: true,
+      checkCrossOrigin: true,
+    });
+  } catch (error) {
+    console.error('加载裁剪器失败:', error);
+    showFailToast('图片裁剪功能加载失败，请刷新页面重试');
+  }
+};
+
+const confirmCrop = async () => {
+  if (!cropperInstance) return;
+  
+  try {
+    // 获取裁剪后的canvas
+    const canvas = cropperInstance.getCroppedCanvas({
+      width: 800, // 输出宽度
+      height: 800, // 输出高度
+      imageSmoothingEnabled: true,
+      imageSmoothingQuality: 'high',
+    });
+    
+    // 将canvas转换为blob
+    canvas.toBlob(async (blob) => {
+      try {
+        // 创建File对象
+        const file = new File([blob], 'goods-image.jpg', { type: 'image/jpeg' });
+        
+        // 上传到服务器
+        showToast({
+          message: '正在上传图片...',
+          duration: 0,
+          forbidClick: true,
+        });
+        
+        const result = await uploadGoodsImage(file);
+        
+        if (result && result.code === 200) {
+          // 保存服务器返回的图片URL
+          formData.value.mainPicUrl = result.data.url;
+          closeCropper();
+          showSuccessToast('图片上传成功');
+        } else {
+          showFailToast(result.msg || '图片上传失败');
+        }
+      } catch (error) {
+        console.error('上传图片失败:', error);
+        showFailToast('图片上传失败');
+      }
+    }, 'image/jpeg', 0.9); // JPEG格式，质量90%
+  } catch (error) {
+    console.error('裁剪图片失败:', error);
+    showFailToast('图片裁剪失败');
+  }
+};
+
+const closeCropper = () => {
+  if (cropperInstance) {
+    cropperInstance.destroy();
+    cropperInstance = null;
+  }
+  showCropperDialog.value = false;
+  cropperImage.value = '';
+};
+
+// 获取完整图片URL
+const getImageUrl = (url) => {
+  if (!url) return '';
+  // 如果是完整URL，直接返回
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  // 如果是相对路径，拼接服务器地址
+  return `http://localhost:8081${url}`;
+};
+
 onMounted(() => {
+  loadCategoryList();
   loadGoodsList();
 });
 </script>
@@ -610,6 +919,178 @@ onMounted(() => {
 .form-group textarea:focus {
   border-color: #98D8C8;
   box-shadow: 0 0 0 3px rgba(152, 216, 200, 0.1);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+  background: white;
+  cursor: pointer;
+}
+
+.form-select:focus {
+  border-color: #98D8C8;
+  box-shadow: 0 0 0 3px rgba(152, 216, 200, 0.1);
+}
+
+.required {
+  color: #ff6b6b;
+}
+
+.image-preview {
+  margin-top: 12px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e8e8e8;
+}
+
+.image-preview img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  display: block;
+}
+
+.low-stock {
+  color: #ff6b6b;
+  font-weight: 600;
+}
+
+/* 图片上传区域 */
+.image-upload-area {
+  margin-top: 8px;
+}
+
+.uploaded-image {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e8e8e8;
+}
+
+.uploaded-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-actions {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.btn-reupload,
+.btn-remove {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-reupload:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-remove:hover {
+  background: rgba(255, 107, 107, 0.8);
+}
+
+.upload-placeholder {
+  width: 200px;
+  height: 200px;
+  border: 2px dashed #e8e8e8;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  gap: 8px;
+}
+
+.upload-placeholder:hover {
+  border-color: #98D8C8;
+  background: rgba(152, 216, 200, 0.05);
+}
+
+.upload-placeholder svg {
+  width: 48px;
+  height: 48px;
+  stroke-width: 1.5;
+  color: #95a5a6;
+}
+
+.upload-placeholder span {
+  font-size: 14px;
+  color: #636e72;
+}
+
+.upload-tip {
+  font-size: 12px !important;
+  color: #95a5a6 !important;
+}
+
+/* 裁剪器容器 */
+.cropper-container {
+  width: 100%;
+  max-height: 500px;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.cropper-image {
+  max-width: 100%;
+  display: block;
+}
+
+.cropper-tip {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #636e72;
+}
+
+.cropper-tip p {
+  margin: 0 0 8px 0;
+  font-weight: 600;
+  color: #2d3436;
+}
+
+.cropper-tip ul {
+  margin: 0;
+  padding-left: 20px;
+  list-style: disc;
+}
+
+.cropper-tip li {
+  margin: 4px 0;
+  line-height: 1.6;
 }
 
 .dialog-footer {

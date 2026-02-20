@@ -37,24 +37,7 @@
       </van-cell-group>
     </div>
 
-    <!-- 服务保障 -->
-    <div class="service-section">
-      <van-cell :border="false">
-        <template #icon>
-          <van-icon name="like-o" />
-        </template>
-        <template #title>
-          <div class="service-tags">
-            <span class="service-tag">退货宝</span>
-            <span class="service-tag">极速退款</span>
-            <span class="service-tag">7天无理由退货</span>
-          </div>
-        </template>
-        <template #right-icon>
-          <van-icon name="arrow" />
-        </template>
-      </van-cell>
-    </div>
+
 
     <!-- 评价区域 -->
     <div class="review-section" ref="reviewRef">
@@ -64,11 +47,7 @@
           写评价
         </button>
       </div>
-      <div class="review-tags">
-        <van-tag plain type="warning">味道好吃 {{ reviewTags.taste }}</van-tag>
-        <van-tag plain type="warning">用完还会再回购 {{ reviewTags.repurchase }}</van-tag>
-      </div>
-      <div class="review-item" v-for="review in reviews" :key="review.id">
+      <div :class="['review-item', { 'topped': review.isTop }]" v-for="review in reviews" :key="review.id">
         <div class="review-user">
           <van-image
             round
@@ -593,19 +572,21 @@ const loadGoodsDetail = async (goodsId) => {
     const data = await getGoodDetailSafe(goodsId);
     
     if (data) {
-      // 更新商品信息
-      const priceStr = data.price.toString();
+      // 处理价格，分离整数和小数部分
+      const priceStr = data.price ? data.price.toString() : '0';
       const [intPart, decimalPart = '00'] = priceStr.split('.');
       
+      // 更新商品信息
       goodsInfo.value = {
         id: data.id,
         price: intPart,
         priceDecimal: decimalPart.padEnd(2, '0'),
-        title: `${data.name} ${data.unit || ''}`,
-        name: data.name,
-        unit: data.unit,
-        sold: data.sold,
-        msg: data.msg,
+        title: `${data.name || ''} ${data.unit || ''}`,
+        name: data.name || '',
+        unit: data.unit || '',
+        sold: data.sold || 0,
+        stock: data.stock || 0,
+        msg: data.msg || '',
         shippingOrigin: data.shippingOrigin || '上海',
         postage: data.postage || 0,
         detail: data.detail || ''
@@ -686,7 +667,8 @@ const loadComments = async (goodsId) => {
         content: comment.content,
         images: comment.images || [],
         merchantReply: comment.merchantReply,
-        merchantReplyTime: comment.merchantReplyTime
+        merchantReplyTime: comment.merchantReplyTime,
+        isTop: comment.isTop || false
       }));
       
       reviews.value = [...reviews.value, ...newComments];
@@ -886,8 +868,15 @@ onBeforeUnmount(() => {
 }
 
 .review-item {
-  padding: 12px 0;
+  padding: 12px;
   border-top: 1px solid #f5f5f5;
+  background-color: #fff;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.review-item.topped {
+  background-color: #fffacd;
 }
 
 .review-user {

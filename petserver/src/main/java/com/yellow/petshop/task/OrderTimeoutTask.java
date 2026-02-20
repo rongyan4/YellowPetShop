@@ -1,11 +1,15 @@
 package com.yellow.petshop.task;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.yellow.petshop.mapper.CommodityMapper;
+import com.yellow.petshop.mapper.OrderItemMapper;
 import com.yellow.petshop.mapper.OrderMapper;
 import com.yellow.petshop.model.order.Order;
+import com.yellow.petshop.model.order.OrderItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,6 +24,12 @@ public class OrderTimeoutTask {
     @Autowired
     private OrderMapper orderMapper;
     
+    @Autowired
+    private OrderItemMapper orderItemMapper;
+    
+    @Autowired
+    private CommodityMapper commodityMapper;
+    
     /**
      * 订单超时时间（分钟）
      */
@@ -31,6 +41,7 @@ public class OrderTimeoutTask {
      * 0 * * * * ? 表示每分钟的第0秒执行
      */
     @Scheduled(cron = "0 * * * * ?")
+    @Transactional(rollbackFor = Exception.class)
     public void cancelTimeoutOrders() {
         try {
             System.out.println("=== 开始检查超时订单 ===");
@@ -58,6 +69,17 @@ public class OrderTimeoutTask {
             int cancelCount = 0;
             for (Order order : timeoutOrders) {
                 try {
+                    // 查询订单商品明细，恢复库存
+                    List<OrderItem> items = orderItemMapper.selectByOrderId(order.getId());
+                    for (OrderItem item : items) {
+                        // 恢复库存
+                        int result = commodityMapper.increaseStock(item.getCommodityId(), item.getQuantity());
+                        if (result > 0) {
+                            System.out.println("  - 恢复商品 " + item.getCommodityName() + " 库存 " + item.getQuantity());
+                        }
+                    }
+                    
+                    // 取消订单
                     order.setStatus("CANCELLED");
                     order.setUpdateTime(LocalDateTime.now());
                     orderMapper.updateById(order);

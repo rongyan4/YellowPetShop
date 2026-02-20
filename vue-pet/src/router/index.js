@@ -158,6 +158,12 @@ const routes = [
         meta: { requiresMerchantAuth: true }
       },
       {
+        path: "category",
+        name: "merchant-category",
+        component: () => import("../views/merchant/CategoryManagement.vue"),
+        meta: { requiresMerchantAuth: true }
+      },
+      {
         path: "member",
         name: "merchant-member",
         component: () => import("../views/merchant/MemberManagement.vue"),

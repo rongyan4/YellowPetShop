@@ -14,7 +14,7 @@
     <!-- 评论列表 -->
     <div class="comments-wrapper">
       <div v-if="commentList.length > 0" class="comments-list">
-        <div v-for="comment in commentList" :key="comment.id" class="comment-card">
+        <div v-for="comment in commentList" :key="comment.id" :class="['comment-card', { 'topped': comment.isTop }]">
           <div class="comment-header">
             <div class="user-info">
               <img :src="comment.avatar || '/images/default-avatar.png'" :alt="comment.nickname" class="avatar" />
@@ -300,6 +300,10 @@ onMounted(() => {
   background: #f8f9fa;
   border-radius: 12px;
   transition: all 0.2s;
+}
+
+.comment-card.topped {
+  background: #fffacd;
 }
 
 .comment-card:hover {

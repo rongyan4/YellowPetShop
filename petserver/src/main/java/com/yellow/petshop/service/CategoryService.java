@@ -31,4 +31,22 @@ public interface CategoryService {
      * @return 分页结果
      */
     PageResult<CommodityInfo> getGoodsByCategoryPage(Long categoryId, Long current, Long size);
+    
+    /**
+     * 添加分类
+     * @param category 分类信息
+     */
+    void addCategory(Category category);
+    
+    /**
+     * 更新分类
+     * @param category 分类信息
+     */
+    void updateCategory(Category category);
+    
+    /**
+     * 删除分类
+     * @param id 分类ID
+     */
+    void deleteCategory(Long id);
 }

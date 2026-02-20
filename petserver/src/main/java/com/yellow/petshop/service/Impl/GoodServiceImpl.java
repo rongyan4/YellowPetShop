@@ -26,12 +26,16 @@ public class GoodServiceImpl implements GoodService {
     private CommodityImageMapper commodityImageMapper;
 
     /**
-     * 获取所有商品列表
+     * 获取所有商品列表（仅返回已上架商品）
      * @return 商品列表
      */
     @Override
     public List<CommodityInfo> getAllGoods(){
-        return commodityMapper.selectList(null);
+        // 使用 MyBatis-Plus 的条件构造器查询已上架商品
+        return commodityMapper.selectList(
+            new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<CommodityInfo>()
+                .eq("is_valid", 1)
+        );
     }
 
     /**
@@ -70,6 +74,7 @@ public class GoodServiceImpl implements GoodService {
 
     /**
      * 根据ID获取商品详情（包含图片列表）
+     * 只返回已上架的商品
      * @param id 商品ID
      * @return 商品详情
      */
@@ -78,6 +83,11 @@ public class GoodServiceImpl implements GoodService {
         // 查询商品基本信息
         CommodityInfo commodityInfo = commodityMapper.selectById(id);
         if (commodityInfo == null) {
+            return null;
+        }
+        
+        // 检查商品是否上架
+        if (commodityInfo.getIsValid() == null) {
             return null;
         }
         

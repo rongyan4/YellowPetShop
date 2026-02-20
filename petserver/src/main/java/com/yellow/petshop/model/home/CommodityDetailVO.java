@@ -21,6 +21,7 @@ public class CommodityDetailVO {
     private BigDecimal price;
     private String unit;
     private Integer sold;
+    private Integer stock;
     private String mainPicUrl;
     private String msg;
     private String detail;

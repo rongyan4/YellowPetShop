@@ -56,14 +56,14 @@
       
       <div class="goods-list">
         <div class="goods-item" v-for="item in orderDetail.orderItems" :key="item.id">
-          <img :src="item.productImage || '/images/goods/ml.png'" :alt="item.productName" class="goods-image" />
+          <img :src="item.commodityPic || '/images/goods/ml.png'" :alt="item.commodityName" class="goods-image" />
           <div class="goods-info">
-            <div class="goods-name">{{ item.productName }}</div>
-            <div class="goods-spec">{{ item.productSpec }}</div>
+            <div class="goods-name">{{ item.commodityName }}</div>
+            <div class="goods-spec">数量：{{ item.quantity }}</div>
           </div>
-          <div class="goods-price">¥{{ item.price }}</div>
+          <div class="goods-price">¥{{ parseFloat(item.commodityPrice || 0).toFixed(2) }}</div>
           <div class="goods-quantity">x{{ item.quantity }}</div>
-          <div class="goods-total">¥{{ (item.price * item.quantity).toFixed(2) }}</div>
+          <div class="goods-total">¥{{ parseFloat(item.totalPrice || 0).toFixed(2) }}</div>
         </div>
       </div>
     </div>
