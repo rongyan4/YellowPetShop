@@ -30,7 +30,8 @@ public class WebConfig implements WebMvcConfigurer {
                 // 排除登录和注册接口
                 .excludePathPatterns(
                         "/api/user/login",      // 登录接口
-                        "/api/user/register"    // 注册接口
+                        "/api/user/register",    // 注册接口
+                        "/swagger-resources/**","/swagger-ui/**", "/v3/**", "/error"
                 );
     }
 

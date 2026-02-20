@@ -57,3 +57,7 @@ openapi:
     contact:
       name: rongyan
       email: 2603726252@qq.com
+
+#jwt 密钥
+jwt:
+  secret: ${JWT_SECRET}

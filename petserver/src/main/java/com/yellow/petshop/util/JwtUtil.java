@@ -6,6 +6,7 @@ import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
@@ -13,6 +14,7 @@ import java.util.UUID;
 
 public class JwtUtil {
     private long expirationTime = 1000 * 60 * 60 * 24 * 7;
+    @Value("${jwt.secret}")
     private String secret = "2F9s7k8d6j5g4h3f2d1s0a9s8d7f6g5h4j3k2l1m0n9b8v7c6x5z4a8s7d6f5g4h3j2=";
 
     //生成token（使用User对象）
