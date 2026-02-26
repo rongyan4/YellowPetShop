@@ -7,7 +7,7 @@
           {{ displayName }}
           <i class="arrow-right">›</i>
         </div>
-        <div class="member-days" v-if="isLoggedIn">成为会员第5年219天</div>
+        <div class="member-days" v-if="isLoggedIn">{{ memberDaysText }}</div>
       </div>
       <div class="qr-icon">
         <svg viewBox="0 0 24 24" width="24" height="24">
@@ -20,10 +20,10 @@
     </div>
 
     <!-- 会员贵宾卡片 - 仅登录后显示 -->
-    <div class="vip-card" v-if="isLoggedIn">
-      <div class="vip-title">见习贵宾</div>
+    <div class="vip-card" v-if="isLoggedIn" :style="vipCardStyle">
+      <div class="vip-title">{{ vipLevelText }}</div>
       <div class="vip-progress">
-        <div class="progress-text">累计10成长值成为「进阶贵宾」</div>
+        <div class="progress-text">{{ vipProgressText }}</div>
       </div>
     </div>
 
@@ -117,12 +117,75 @@ const displayName = computed(() => {
   return '请登录';
 });
 
+// 会员加入时间展示
+const memberDaysText = computed(() => {
+  const info = userStore.userInfo;
+  if (!info || !info.createTime) {
+    return '欢迎成为大黄宠物会员';
+  }
+  const joinDate = new Date(info.createTime);
+  if (Number.isNaN(joinDate.getTime())) {
+    return '欢迎成为大黄宠物会员';
+  }
+  const now = new Date();
+  const diffTime = now.getTime() - joinDate.getTime();
+  if (diffTime <= 0) {
+    return '成为会员第1天';
+  }
+  const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  const years = Math.floor(totalDays / 365);
+  const days = totalDays % 365;
+  if (years > 0) {
+    return `成为会员第${years}年${days}天`;
+  }
+  return `成为会员第${totalDays}天`;
+});
+
 // 资产数据
 const assets = ref({
   coupons: 0,
   cards: 0,
   wallet: 0.00,
   points: 0
+});
+
+// 会员等级相关展示（使用后端返回的数据）
+const vipLevelText = computed(() => {
+  const level = userStore.userInfo?.level;
+  return level || 'S1';
+});
+
+const vipProgressText = computed(() => {
+  const info = userStore.userInfo || {};
+  const current = info.currentPoints ?? 0;
+  const target = info.nextLevelPoints ?? 0;
+  const nextLevel = info.nextLevel || '下一等级';
+
+  if (!target || target <= 0) {
+    return '已达到最高会员等级';
+  }
+  const remain = Math.max(target - current, 0);
+  return `再获得 ${remain} 积分即可升级到 ${nextLevel}`;
+});
+
+const vipCardStyle = computed(() => {
+  const level = userStore.userInfo?.level || 'S1';
+  const match = String(level).match(/S(\d+)/i);
+  const num = match ? parseInt(match[1], 10) : 1;
+
+  // 不同等级对应不同颜色渐变背景
+  switch (true) {
+    case num >= 5:
+      return { background: 'linear-gradient(135deg, #f48fb1 0%, #e91e63 100%)' };
+    case num === 4:
+      return { background: 'linear-gradient(135deg, #ffcc80 0%, #ff9800 100%)' };
+    case num === 3:
+      return { background: 'linear-gradient(135deg, #90caf9 0%, #2196f3 100%)' };
+    case num === 2:
+      return { background: 'linear-gradient(135deg, #a5d6a7 0%, #4caf50 100%)' };
+    default:
+      return { background: 'linear-gradient(135deg, #e0e0e0 0%, #b0bec5 100%)' };
+  }
 });
 
 // 加载钱包余额

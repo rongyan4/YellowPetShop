@@ -250,3 +250,57 @@ export function uploadGoodsImage(file) {
     }
   });
 }
+
+/**
+ * 获取会员详情
+ */
+export function getMemberDetail(userId) {
+  return request({
+    url: `/merchant/members/${userId}`,
+    method: 'get'
+  });
+}
+
+/**
+ * 更新会员信息
+ */
+export function updateMemberInfo(userId, data) {
+  return request({
+    url: `/merchant/members/${userId}`,
+    method: 'put',
+    data
+  });
+}
+
+/**
+ * 调整会员余额
+ */
+export function adjustMemberBalance(userId, data) {
+  return request({
+    url: `/merchant/members/${userId}/balance`,
+    method: 'post',
+    data
+  });
+}
+
+/**
+ * 重置会员支付密码
+ */
+export function resetMemberPayPassword(userId, data) {
+  return request({
+    url: `/merchant/members/${userId}/pay-password`,
+    method: 'post',
+    data
+  });
+}
+
+/**
+ * 获取会员订单列表
+ */
+export function getMemberOrders(userId, params) {
+  return request({
+    url: `/merchant/members/${userId}/orders`,
+    method: 'get',
+    params
+  });
+}

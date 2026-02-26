@@ -32,7 +32,9 @@ spring:
   # 静态资源配置
   web:
     resources:
-      static-locations: classpath:/static/
+      static-locations: file:c:/Users/rongyan/Desktop/ks/YellowPetShop/images/
+  mvc:
+    static-path-pattern: /api/images/**
 
 # 服务器配置
 server:
@@ -61,3 +63,11 @@ openapi:
 #jwt 密钥
 jwt:
   secret: ${JWT_SECRET}
+
+# 文件上传配置
+file:
+  upload:
+    # 文件上传根目录
+    base-dir: ${FILE_UPLOAD_BASE_DIR:c:/Users/rongyan/Desktop/ks/YellowPetShop/images}
+    # 文件访问路径前缀（后端映射路径）
+    url-prefix: ${FILE_URL_PREFIX:/api/images}

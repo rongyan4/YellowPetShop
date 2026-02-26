@@ -69,6 +69,15 @@
         </div>
       </div>
 
+      <div class="info-item">
+        <span class="info-label">加入时间</span>
+        <div class="info-value-wrapper">
+          <span class="info-value">
+            {{ joinDateText }}
+          </span>
+        </div>
+      </div>
+
       <div class="info-item" @click="editAddress">
         <span class="info-label">收货地址</span>
         <div class="info-value-wrapper">
@@ -118,6 +127,22 @@ const userStore = useUserStore();
 
 // 用户信息
 const userInfo = computed(() => userStore.userInfo || {});
+
+// 加入时间展示（仅展示日期）
+const joinDateText = computed(() => {
+  const ct = userInfo.value.createTime;
+  if (!ct) {
+    return '未知';
+  }
+  const d = new Date(ct);
+  if (Number.isNaN(d.getTime())) {
+    return ct;
+  }
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+});
 
 // 用户头像
 const userAvatar = computed(() => {

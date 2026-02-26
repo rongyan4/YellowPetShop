@@ -5,7 +5,7 @@ import request from '@/utils/request';
  */
 export function getMerchantMemberList(params) {
   return request({
-    url: '/merchant/member/list',
+    url: '/merchant/members/list',
     method: 'get',
     params
   });
@@ -16,7 +16,7 @@ export function getMerchantMemberList(params) {
  */
 export function updateMemberStatus(params) {
   return request({
-    url: '/merchant/member/status',
+    url: '/merchant/members/status',
     method: 'put',
     params
   });
@@ -27,7 +27,7 @@ export function updateMemberStatus(params) {
  */
 export function deleteMember(id) {
   return request({
-    url: `/merchant/member/delete/${id}`,
+    url: `/merchant/members/delete/${id}`,
     method: 'delete'
   });
 }

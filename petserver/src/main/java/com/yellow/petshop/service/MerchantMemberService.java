@@ -1,94 +1,49 @@
 package com.yellow.petshop.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.yellow.petshop.mapper.MerchantOperationLogMapper;
-import com.yellow.petshop.mapper.UserMapper;
-import com.yellow.petshop.model.PageResult;
-import com.yellow.petshop.model.merchant.MerchantOperationLog;
-import com.yellow.petshop.model.user.User;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
- * 商家会员管理服务类
+ * 商家会员管理服务接口
  */
-@Service
-public class MerchantMemberService {
-
-    @Autowired
-    private UserMapper userMapper;
-
-    @Autowired
-    private MerchantOperationLogMapper operationLogMapper;
-
+public interface MerchantMemberService {
+    
     /**
-     * 分页查询会员列表
+     * 分页获取会员列表
      */
-    public PageResult<User> getMemberList(int page, int pageSize, String keyword) {
-        Page<User> pageParam = new Page<>(page, pageSize);
-        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-        
-        if (keyword != null && !keyword.trim().isEmpty()) {
-            wrapper.like(User::getUsername, keyword)
-                    .or()
-                    .like(User::getNickname, keyword)
-                    .or()
-                    .like(User::getPhone, keyword);
-        }
-        
-        wrapper.orderByDesc(User::getCreateTime);
-        
-        Page<User> result = userMapper.selectPage(pageParam, wrapper);
-        
-        PageResult<User> pageResult = new PageResult<>();
-        pageResult.setList(result.getRecords());
-        pageResult.setTotal(result.getTotal());
-        pageResult.setPageNum(page);
-        pageResult.setPageSize(pageSize);
-        
-        return pageResult;
-    }
-
+    Map<String, Object> getMemberList(int page, int pageSize, String keyword);
+    
     /**
-     * 更新会员状态
+     * 获取会员详情
      */
-    public void updateMemberStatus(Long userId, Integer status, Long merchantId, String ipAddress) {
-        User user = userMapper.selectById(userId);
-        if (user != null) {
-            user.setIsValid(status);
-            userMapper.updateById(user);
-            
-            // 记录操作日志
-            String statusText = status == 1 ? "启用" : "禁用";
-            logOperation(merchantId, "会员管理", statusText + "会员：" + user.getUsername(), ipAddress);
-        }
-    }
-
+    Map<String, Object> getMemberDetail(Long userId);
+    
     /**
-     * 删除会员
+     * 更新会员信息
      */
-    public void deleteMember(Long userId, Long merchantId, String ipAddress) {
-        User user = userMapper.selectById(userId);
-        if (user != null) {
-            userMapper.deleteById(userId);
-            // 记录操作日志
-            logOperation(merchantId, "会员管理", "删除会员：" + user.getUsername(), ipAddress);
-        }
-    }
-
+    void updateMemberInfo(Long userId, Map<String, Object> data);
+    
     /**
-     * 记录操作日志
+     * 调整会员余额
      */
-    private void logOperation(Long merchantId, String type, String desc, String ipAddress) {
-        MerchantOperationLog log = new MerchantOperationLog();
-        log.setMerchantId(merchantId);
-        log.setOperationType(type);
-        log.setOperationDesc(desc);
-        log.setOperationTime(LocalDateTime.now());
-        log.setIpAddress(ipAddress);
-        operationLogMapper.insert(log);
-    }
+    void adjustMemberBalance(Long userId, Map<String, Object> data, Long merchantId);
+    
+    /**
+     * 重置会员支付密码
+     */
+    void resetMemberPayPassword(Long userId, String newPassword);
+    
+    /**
+     * 获取会员订单列表
+     */
+    Map<String, Object> getMemberOrders(Long userId, int page, int pageSize);
+    
+    /**
+     * 更新会员启用/禁用状态
+     */
+    void updateMemberStatus(Long userId, Integer status);
+    
+    /**
+     * 删除会员（逻辑删除：禁用账号）
+     */
+    void deleteMember(Long userId);
 }

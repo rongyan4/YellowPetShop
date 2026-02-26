@@ -1,4 +1,8 @@
 const { defineConfig } = require("@vue/cli-service");
+
+// 根据环境变量确定后端地址
+const API_TARGET = process.env.VUE_APP_API_TARGET || 'http://0.0.0.0:3000';
+
 module.exports = defineConfig({
 	transpileDependencies: [],
 	lintOnSave: false,
@@ -9,7 +13,7 @@ module.exports = defineConfig({
 		allowedHosts: 'all', // 允许所有主机访问，解决内网IP访问403问题
 		proxy: {
 			'/api':{
-				target: 'http://0.0.0.0:3000',
+				target: API_TARGET,
 				changeOrigin: true,
 				pathRewrite: {
 				'^/api': '/api'
@@ -28,7 +32,7 @@ module.exports = defineConfig({
 				}
 			},
 			'/comment_image': {
-				target: 'http://0.0.0.0:3000',
+				target: API_TARGET,
 				changeOrigin: true,
 				pathRewrite: {
 					'^/comment_image': '/comment_image'

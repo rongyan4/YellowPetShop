@@ -28,6 +28,7 @@ public class User {
     private String role;
     private String birthday;
     private String phone;
+    private Integer points;
     private Integer isValid;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;

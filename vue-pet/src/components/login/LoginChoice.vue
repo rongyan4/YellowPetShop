@@ -30,8 +30,8 @@
       </div>
 
       <!-- 标题文字 -->
-      <h2 class="title">美好自有力量</h2>
-      <p class="subtitle">成为奈雪会员，享受更多会员权益</p>
+      <h2 class="title">登录宠物商城</h2>
+      <p class="subtitle">立即登录，享受更多会员权益</p>
 
       <!-- 登录按钮 -->
       <button class="login-btn" @click="showLoginModal">

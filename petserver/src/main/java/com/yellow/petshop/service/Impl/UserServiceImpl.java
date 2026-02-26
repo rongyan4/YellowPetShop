@@ -82,6 +82,17 @@ public class UserServiceImpl implements UserService {
         if (user == null) {
             throw new RuntimeException("用户不存在");
         }
+        // 计算会员等级与积分进度
+        int totalPoints = user.getPoints() != null ? user.getPoints() : 0;
+        MembershipInfo membershipInfo = calculateMembership(totalPoints);
+
+        String levelLabel = "S" + membershipInfo.getLevel();
+        // 这里约定最高等级为 S5，之后不再显示下一等级
+        int maxLevel = 5;
+        String nextLevelLabel = membershipInfo.getLevel() < maxLevel
+                ? "S" + (membershipInfo.getLevel() + 1)
+                : null;
+
         // 将User转换为UserInfo（不返回密码）
         return UserInfo.builder()
                 .id(user.getId())
@@ -93,6 +104,12 @@ public class UserServiceImpl implements UserService {
                 .role(user.getRole())
                 .gender(user.getGender())
                 .birthday(user.getBirthday())
+                .createTime(user.getCreateTime() != null ? user.getCreateTime().toString() : null)
+                .points(totalPoints)
+                .level(levelLabel)
+                .currentPoints(membershipInfo.getCurrentPoints())
+                .nextLevelPoints(membershipInfo.getNextLevelPoints())
+                .nextLevel(nextLevelLabel)
                 .build();
     }
 
@@ -117,5 +134,71 @@ public class UserServiceImpl implements UserService {
         }
         user.setAvatar(avatarUrl);
         userMapper.updateById(user);
+    }
+
+    /**
+     * 会员等级计算规则：
+     * - 初始为 S1
+     * - 升级到 S2 需要 20 积分
+     * - 之后每升级一级所需积分翻倍：S2→S3 需要 40，S3→S4 需要 80，以此类推
+     * - currentPoints 表示当前等级下已累计到下一等级的积分
+     * - nextLevelPoints 表示从当前等级升到下一等级所需的总积分
+     */
+    private MembershipInfo calculateMembership(int totalPoints) {
+        int level = 1;
+        int stepCost = 20; // S1 -> S2 需要 20 积分
+        int maxLevel = 5;  // 最高显示到 S5
+        int remaining = Math.max(totalPoints, 0);
+
+        while (level < maxLevel && remaining >= stepCost) {
+            remaining -= stepCost;
+            level++;
+            stepCost *= 2;
+        }
+
+        MembershipInfo info = new MembershipInfo();
+        info.setLevel(level);
+        // 已到最高等级则不再显示进度条
+        if (level >= maxLevel) {
+            info.setCurrentPoints(0);
+            info.setNextLevelPoints(0);
+        } else {
+            info.setCurrentPoints(remaining);
+            info.setNextLevelPoints(stepCost);
+        }
+        return info;
+    }
+
+    /**
+     * 内部使用的会员信息结构体
+     */
+    private static class MembershipInfo {
+        private int level;
+        private int currentPoints;
+        private int nextLevelPoints;
+
+        public int getLevel() {
+            return level;
+        }
+
+        public void setLevel(int level) {
+            this.level = level;
+        }
+
+        public int getCurrentPoints() {
+            return currentPoints;
+        }
+
+        public void setCurrentPoints(int currentPoints) {
+            this.currentPoints = currentPoints;
+        }
+
+        public int getNextLevelPoints() {
+            return nextLevelPoints;
+        }
+
+        public void setNextLevelPoints(int nextLevelPoints) {
+            this.nextLevelPoints = nextLevelPoints;
+        }
     }
 }

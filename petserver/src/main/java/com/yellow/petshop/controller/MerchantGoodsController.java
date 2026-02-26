@@ -4,22 +4,16 @@ import com.yellow.petshop.model.PageResult;
 import com.yellow.petshop.model.Result;
 import com.yellow.petshop.model.home.CommodityInfo;
 import com.yellow.petshop.service.MerchantGoodsService;
+import com.yellow.petshop.util.FileUploadUtil;
 import com.yellow.petshop.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * 商家商品管理控制器
@@ -30,58 +24,36 @@ public class MerchantGoodsController {
 
     @Autowired
     private MerchantGoodsService goodsService;
-    
-    @Value("${file.upload.path:src/main/resources/static/images/goods}")
-    private String uploadPath;
 
     /**
      * 上传商品图片
      */
     @PostMapping("/upload-image")
-    public Result<Map<String, String>> uploadImage(@RequestParam("file") MultipartFile file) {
+    public Result<Map<String, String>> uploadImage(
+            @RequestParam("file") MultipartFile file,
+            HttpServletRequest request) {
         try {
-            if (file.isEmpty()) {
-                return Result.error("请选择要上传的文件");
+            // 获取商家ID（可选，用于文件命名）
+            Long merchantId = getMerchantIdFromToken(request);
+            
+            // 使用统一的文件上传工具
+            FileUploadUtil.UploadResult result = FileUploadUtil.uploadFile(
+                file, 
+                FileUploadUtil.BusinessType.GOODS_IMAGE, 
+                merchantId
+            );
+            
+            if (!result.isSuccess()) {
+                return Result.error(result.getMessage());
             }
             
-            // 验证文件类型
-            String contentType = file.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                return Result.error("只能上传图片文件");
-            }
+            // 返回结果
+            Map<String, String> data = new HashMap<>();
+            data.put("url", result.getImageUrl());
+            data.put("filename", result.getFileName());
             
-            // 验证文件大小（限制5MB）
-            if (file.getSize() > 5 * 1024 * 1024) {
-                return Result.error("图片大小不能超过5MB");
-            }
-            
-            // 生成唯一文件名
-            String originalFilename = file.getOriginalFilename();
-            String extension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-            String filename = UUID.randomUUID().toString() + extension;
-            
-            // 确保上传目录存在
-            File uploadDir = new File(uploadPath);
-            if (!uploadDir.exists()) {
-                uploadDir.mkdirs();
-            }
-            
-            // 保存文件
-            Path filePath = Paths.get(uploadPath, filename);
-            Files.write(filePath, file.getBytes());
-            
-            // 返回访问URL
-            String imageUrl = "/images/goods/" + filename;
-            
-            Map<String, String> result = new HashMap<>();
-            result.put("url", imageUrl);
-            result.put("filename", filename);
-            
-            return Result.success(result);
-        } catch (IOException e) {
+            return Result.success(data);
+        } catch (Exception e) {
             e.printStackTrace();
             return Result.error("图片上传失败：" + e.getMessage());
         }

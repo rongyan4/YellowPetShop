@@ -4,6 +4,9 @@ import { showToast } from 'vant';
 // 全局请求计数器
 let globalRequestCounter = 0;
 
+// 图片基础URL配置（根据环境变量）
+export const IMAGE_BASE_URL = process.env.VUE_APP_IMAGE_BASE_URL || 'http://localhost:3000';
+
 // 创建 axios 实例
 const service = axios.create({
   baseURL: '/api/', // API 基础路径
@@ -233,6 +236,28 @@ export const safeRequestData = async (promise, defaultValue = null) => {
     // 错误已经在拦截器中处理并提示了，这里只返回默认值
     return defaultValue;
   }
+};
+
+/**
+ * 获取完整的图片URL
+ * @param {string} relativePath - 相对路径，如：/api/images/goods/goods_1_xxx.jpg
+ * @returns {string} 完整URL
+ * 
+ * @example
+ * // 使用方式
+ * const fullUrl = getImageUrl('/api/images/goods/goods_1_xxx.jpg');
+ * // 返回: http://localhost:3000/api/images/goods/goods_1_xxx.jpg
+ */
+export const getImageUrl = (relativePath) => {
+  if (!relativePath) return '';
+  
+  // 如果已经是完整URL，直接返回
+  if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+    return relativePath;
+  }
+  
+  // 拼接完整URL
+  return IMAGE_BASE_URL + relativePath;
 };
 
 // 导出 axios 实例，以便需要时直接使用

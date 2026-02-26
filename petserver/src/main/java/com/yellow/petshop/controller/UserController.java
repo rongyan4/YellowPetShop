@@ -5,20 +5,12 @@ import com.yellow.petshop.model.user.LoginDTO;
 import com.yellow.petshop.model.user.RegisterDTO;
 import com.yellow.petshop.model.user.UserInfo;
 import com.yellow.petshop.service.UserService;
+import com.yellow.petshop.util.FileUploadUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -163,78 +155,32 @@ public class UserController {
             @RequestParam("file") MultipartFile file,
             @RequestAttribute("userId") Long userId) {
         
-        // 1. 验证文件是否为空
-        if (file == null || file.isEmpty()) {
-            return Result.error("请选择要上传的文件");
+        // 使用统一的文件上传工具
+        FileUploadUtil.UploadResult result = FileUploadUtil.uploadFile(
+            file, 
+            FileUploadUtil.BusinessType.USER_AVATAR, 
+            userId
+        );
+        
+        if (!result.isSuccess()) {
+            return Result.error(result.getMessage());
         }
-
-        // 2. 验证文件类型
-        String contentType = file.getContentType();
-        List<String> allowedTypes = Arrays.asList("image/jpeg", "image/png", "image/gif", "image/webp");
-        if (contentType == null || !allowedTypes.contains(contentType)) {
-            return Result.error("不支持的文件类型，仅支持 jpg、png、gif、webp 格式");
-        }
-
-        // 3. 验证文件大小（2MB）
-        long maxSize = 2 * 1024 * 1024;
-        if (file.getSize() > maxSize) {
-            return Result.error("文件大小超过限制，最大支持 2MB");
-        }
-
+        
         try {
-            // 4. 获取文件扩展名
-            String originalFilename = file.getOriginalFilename();
-            String extension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-
-            // 5. 生成文件名：user_{userId}_{timestamp}.{extension}
-            String timestamp = String.valueOf(System.currentTimeMillis());
-            String fileName = "user_" + userId + "_" + timestamp + extension;
-
-            // 6. 确定保存路径：static/images/user/avatar/
-            String uploadDir = "src/main/resources/static/images/user/avatar/";
-            File directory = new File(uploadDir);
-            if (!directory.exists()) {
-                directory.mkdirs();
-            }
-
-            // 7. 保存新文件
-            Path filePath = Paths.get(uploadDir + fileName);
-            Files.write(filePath, file.getBytes());
-
-            // 8. 生成访问URL（使用 /api/images 避免与前端 public/images 冲突）
-            String avatarUrl = "/api/images/user/avatar/" + fileName;
-
-            // 9. 更新数据库中的头像URL
-            userService.updateAvatar(userId, avatarUrl);
-
-            // 10. 删除该用户的旧头像文件（在数据库更新成功后再删除）
-            File[] oldFiles = directory.listFiles((dir, name) -> 
-                name.startsWith("user_" + userId + "_") && !name.equals(fileName)
-            );
-            if (oldFiles != null) {
-                for (File oldFile : oldFiles) {
-                    oldFile.delete();
-                }
-            }
-
-            // 11. 返回结果
+            // 更新数据库中的头像URL
+            userService.updateAvatar(userId, result.getImageUrl());
+            
+            // 返回结果
             Map<String, Object> data = new HashMap<>();
-            data.put("avatarUrl", avatarUrl);
-            data.put("fileName", fileName);
-            data.put("fileSize", file.getSize());
-            data.put("uploadTime", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
-
+            data.put("avatarUrl", result.getImageUrl());
+            data.put("fileName", result.getFileName());
+            data.put("fileSize", result.getFileSize());
+            data.put("uploadTime", result.getUploadTime());
+            
             return Result.success(data);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            return Result.error("文件上传失败：" + e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            return Result.error("文件上传失败，请稍后重试");
+            return Result.error("更新头像失败：" + e.getMessage());
         }
     }
 }

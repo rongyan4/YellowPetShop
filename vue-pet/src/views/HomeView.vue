@@ -13,8 +13,11 @@ import { useRouter } from 'vue-router';
 import Home from "@/components/home/Home.vue";
 import Tabbar from "@/components/TabBar.vue";
 import { getToken, parseJWT, isAuthenticated } from '@/utils/auth';
+import { useUserStore } from '@/stores/user';
+import { getCurrentUserInfo } from '@/api/user';
 
 const router = useRouter();
+const userStore = useUserStore();
 const isLoggedIn = ref(false);
 const userInfo = ref({
   avatar: '/images/default_avatar.png',
@@ -27,28 +30,47 @@ const userInfo = ref({
   coupons: '-'
 });
 
-onMounted(() => {
+onMounted(async () => {
   // 检查登录状态
   const token = getToken();
-  
+
   if (token && isAuthenticated()) {
     isLoggedIn.value = true;
-    
-    // 解析token获取用户信息
+
+    try {
+      // 优先从后端获取最新的用户信息（包含积分和等级）
+      const res = await getCurrentUserInfo();
+      if (res.code === 200 && res.data) {
+        const data = res.data;
+        // 同步到全局 userStore，供其他页面复用
+        userStore.setUserInfo(data);
+
+        userInfo.value = {
+          avatar: data.avatar || '/images/default_avatar.png',
+          username: data.nickname || data.username || '用户',
+          level: data.level || 'S1',
+          currentPoints: data.currentPoints ?? 0,
+          nextLevelPoints: data.nextLevelPoints ?? 0,
+          nextLevel: data.nextLevel || '',
+          points: data.points ?? 0,
+          // 优惠券目前暂无后端数据，占位为 0
+          coupons: 0
+        };
+        return;
+      }
+    } catch (e) {
+      console.error('获取用户信息失败，用 token 兜底展示用户名', e);
+    }
+
+    // 如果后端请求失败，退回到 token 中的用户名占位展示
     const payload = parseJWT(token);
     if (payload) {
-      console.log('=== NewHome 加载 - Token信息 ===');
-      console.log('Token:', token);
-      console.log('Username:', payload.username);
-      console.log('============================');
-      
-      // 更新用户信息
       userInfo.value = {
-        avatar: '/images/default_avatar.png', // 可以从后端获取
+        avatar: '/images/default_avatar.png',
         username: payload.username || '用户',
         level: 'S1',
         currentPoints: 0,
-        nextLevelPoints: 3,
+        nextLevelPoints: 20,
         nextLevel: 'S2',
         points: 0,
         coupons: 0

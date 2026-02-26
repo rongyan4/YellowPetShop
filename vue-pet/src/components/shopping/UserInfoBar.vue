@@ -2,21 +2,33 @@
   <div class="user-info-bar">
     <div class="user-avatar">
       <img :src="userInfo.avatar || '/images/default_avatar.png'" alt="用户头像" />
-      <span class="level-badge" v-if="userInfo.level">{{ userInfo.level }}</span>
+      <span
+        class="level-badge"
+        v-if="userInfo.level"
+        :style="{ background: levelColor }"
+      >
+        {{ userInfo.level }}
+      </span>
     </div>
     <div class="user-details">
       <div class="username">{{ userInfo.username || '未登录' }}</div>
       <div class="level-progress" v-if="userInfo.level && userInfo.nextLevelPoints > 0">
         <div class="progress-bar">
-          <div class="progress-fill" :style="{ width: levelProgress + '%' }"></div>
+          <div
+            class="progress-fill"
+            :style="{ width: levelProgress + '%', background: levelGradient }"
+          ></div>
         </div>
-        <span class="progress-text">{{ userInfo.currentPoints || 0 }}/{{ userInfo.nextLevelPoints || 0 }}葫芦 冲{{ userInfo.nextLevel || 'S2' }}</span>
+        <span class="progress-text">
+          {{ userInfo.currentPoints || 0 }}/{{ userInfo.nextLevelPoints || 0 }} 积分
+          冲 {{ userInfo.nextLevel || 'S2' }}
+        </span>
       </div>
     </div>
     <div class="user-stats">
       <div class="stat-item">
         <span class="stat-value">{{ userInfo.points }}</span>
-        <span class="stat-label">葫芦</span>
+        <span class="stat-label">积分</span>
       </div>
       <div class="stat-item">
         <span class="stat-value">{{ userInfo.coupons }}</span>
@@ -50,6 +62,29 @@ const levelProgress = computed(() => {
     return 0;
   }
   return Math.min((props.userInfo.currentPoints / props.userInfo.nextLevelPoints) * 100, 100);
+});
+
+// 解析等级数字（S1、S2...）
+const levelNumber = computed(() => {
+  const level = props.userInfo.level || '';
+  const match = String(level).match(/S(\d+)/i);
+  return match ? parseInt(match[1], 10) : 1;
+});
+
+// 不同等级对应不同颜色
+const levelColor = computed(() => {
+  const num = levelNumber.value;
+  if (num >= 5) return '#E91E63'; // S5 及以上：玫红
+  if (num === 4) return '#FF9800'; // S4：橙色
+  if (num === 3) return '#2196F3'; // S3：蓝色
+  if (num === 2) return '#4CAF50'; // S2：绿色
+  return '#9E9E9E'; // S1：灰色
+});
+
+const levelGradient = computed(() => {
+  const color = levelColor.value;
+  // 使用单色渐变，兼容当前样式
+  return `linear-gradient(90deg, ${color}, ${color})`;
 });
 </script>
 
@@ -132,7 +167,6 @@ const levelProgress = computed(() => {
 
         .progress-fill {
           height: 100%;
-          background: linear-gradient(90deg, #FFD700, #FFA500);
           border-radius: .16rem;
           transition: width 0.3s ease;
         }

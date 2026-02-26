@@ -43,9 +43,6 @@
     <div class="review-section" ref="reviewRef">
       <div class="review-header">
         <span class="review-title">评价({{ reviewCount }}+)</span>
-        <button @click="showCommentForm" class="write-comment-btn">
-          写评价
-        </button>
       </div>
       <div :class="['review-item', { 'topped': review.isTop }]" v-for="review in reviews" :key="review.id">
         <div class="review-user">
@@ -157,47 +154,6 @@
         </div>
       </div>
     </van-popup>
-
-    <!-- 评论弹窗 -->
-    <van-popup v-model:show="showCommentDialog" position="bottom" round :style="{ maxHeight: '80%' }">
-      <div class="comment-popup">
-        <div class="popup-header">
-          <span class="popup-title">写评价</span>
-          <van-icon name="cross" @click="showCommentDialog = false" />
-        </div>
-        
-        <div class="comment-form">
-          <div class="form-item">
-            <label>评分</label>
-            <van-rate v-model="commentForm.star" :size="24" color="#ffd21e" void-icon="star" void-color="#eee" />
-          </div>
-          
-          <div class="form-item">
-            <label>评价内容</label>
-            <van-field
-              v-model="commentForm.content"
-              rows="4"
-              autosize
-              type="textarea"
-              maxlength="500"
-              placeholder="分享你的使用感受吧~"
-              show-word-limit
-            />
-          </div>
-          
-          <div class="form-item">
-            <label>上传图片（可选）</label>
-            <van-uploader v-model="commentForm.images" multiple :max-count="6" />
-          </div>
-        </div>
-        
-        <div class="popup-footer">
-          <van-button type="primary" block round @click="submitComment">
-            提交评价
-          </van-button>
-        </div>
-      </div>
-    </van-popup>
   </div>
 </template>
 
@@ -274,82 +230,6 @@ const isFavorited = ref(false);
 // 数量选择弹窗
 const quantityPopupVisible = ref(false);
 const selectedQuantity = ref(1);
-
-// 评论弹窗
-const showCommentDialog = ref(false);
-const commentForm = ref({
-  star: 5,
-  content: '',
-  images: []
-});
-
-// 显示评论对话框
-const showCommentForm = () => {
-  // 检查是否登录
-  const token = localStorage.getItem('token');
-  if (!token) {
-    showDialog({
-      title: '提示',
-      message: '请先登录',
-      confirmButtonText: '去登录',
-      cancelButtonText: '取消',
-      showCancelButton: true,
-    }).then(() => {
-      router.push('/my');
-    }).catch(() => {});
-    return;
-  }
-  
-  // 重置表单
-  commentForm.value = {
-    star: 5,
-    content: '',
-    images: []
-  };
-  showCommentDialog.value = true;
-};
-
-// 提交评论
-const submitComment = async () => {
-  if (!commentForm.value.content.trim()) {
-    showToast('请输入评论内容');
-    return;
-  }
-  
-  try {
-    // 处理图片URL
-    const imageUrls = commentForm.value.images.map(img => {
-      if (typeof img === 'string') return img;
-      if (img.url) return img.url;
-      if (img.content) return img.content; // base64
-      return '';
-    }).filter(url => url);
-    
-    const result = await createCommentSafe({
-      commodityId: goodsInfo.value.id,
-      orderId: null, // 商品详情页评论不关联订单
-      star: Math.round(commentForm.value.star * 2) / 2, // 保留0.5精度
-      content: commentForm.value.content,
-      images: imageUrls
-    });
-    
-    if (result !== null) {
-      showToast({
-        message: '评论成功',
-        icon: 'success'
-      });
-      showCommentDialog.value = false;
-      // 重新加载评论
-      reviews.value = [];
-      reviewCurrentPage.value = 1;
-      reviewFinished.value = false;
-      loadComments(goodsInfo.value.id);
-      loadCommentCount(goodsInfo.value.id);
-    }
-  } catch (error) {
-    console.error('提交评论失败:', error);
-  }
-};
 
 // 底部操作栏功能
 const goToShop = () => {
@@ -845,17 +725,6 @@ onBeforeUnmount(() => {
   color: #333;
 }
 
-.write-comment-btn {
-  padding: 6px 16px;
-  background: linear-gradient(135deg, #ff6034 0%, #ff8f6b 100%);
-  color: white;
-  border: none;
-  border-radius: 16px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
 .write-comment-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(255, 96, 52, 0.3);
@@ -1110,54 +979,6 @@ onBeforeUnmount(() => {
 
 .popup-footer {
   margin-top: 20px;
-}
-
-/* 评论弹窗样式 */
-.comment-popup {
-  padding: 20px;
-  background-color: #fff;
-}
-
-.comment-form {
-  margin: 20px 0;
-}
-
-.form-item {
-  margin-bottom: 20px;
-}
-
-.form-item label {
-  display: block;
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 8px;
-}
-
-
-.bar-icon-btn span {
-  font-size: 11px;
-  color: #666;
-}
-
-.bar-right {
-  flex: 1;
-  display: flex;
-  gap: 8px;
-}
-
-.cart-btn {
-  flex: 1;
-  height: 40px;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.buy-btn {
-  flex: 1;
-  height: 40px;
-  font-size: 14px;
-  font-weight: 500;
 }
 
 /* 响应式 */

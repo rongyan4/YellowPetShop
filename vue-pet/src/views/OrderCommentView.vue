@@ -18,101 +18,187 @@
           v-for="(item, index) in commentItems" 
           :key="item.id"
           class="comment-item"
-          v-show="!item.submitted"
+          :class="{ 'commented': item.commented }"
         >
-          <!-- 商品信息 -->
-          <div class="goods-info">
+          <!-- 商品信息 - 可点击跳转 -->
+          <div class="goods-info" @click="goToGoodDetail(item.commodityId)">
             <img :src="item.commodityPic" :alt="item.commodityName" class="goods-image">
             <div class="goods-detail">
               <div class="goods-name">{{ item.commodityName }}</div>
               <div class="goods-price">¥{{ item.commodityPrice }}</div>
             </div>
+            <van-icon name="arrow" class="arrow-icon" />
           </div>
 
-          <!-- 评分 -->
-          <div class="rating-section">
-            <label class="section-label">商品评分</label>
-            <div class="star-rating">
-              <div class="stars" @mouseleave="handleMouseLeave(index)">
-                <span 
-                  v-for="i in 5" 
-                  :key="i"
-                  class="star-wrapper"
-                  @mouseenter="handleStarHover(index, i)"
-                  @click="handleStarClick(index, i)"
-                >
-                  <!-- 完整星星 -->
-                  <svg 
-                    v-if="getStarType(item.star, i) === 'full'"
-                    class="star full" 
-                    viewBox="0 0 24 24"
+          <!-- 已评论状态 -->
+          <div v-if="item.commented" class="commented-section">
+            <!-- 评分（只读） -->
+            <div class="rating-section readonly">
+              <label class="section-label">商品评分</label>
+              <div class="star-rating">
+                <div class="stars">
+                  <span 
+                    v-for="i in 5" 
+                    :key="i"
+                    class="star-wrapper"
                   >
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#ffd21e"/>
-                  </svg>
-                  <!-- 半星 -->
-                  <svg 
-                    v-else-if="getStarType(item.star, i) === 'half'"
-                    class="star half" 
-                    viewBox="0 0 24 24"
-                  >
-                    <defs>
-                      <linearGradient :id="'half-' + index + '-' + i">
-                        <stop offset="50%" stop-color="#ffd21e"/>
-                        <stop offset="50%" stop-color="#eee"/>
-                      </linearGradient>
-                    </defs>
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" :fill="'url(#half-' + index + '-' + i + ')'"/>
-                  </svg>
-                  <!-- 空星 -->
-                  <svg 
-                    v-else
-                    class="star empty" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#eee"/>
-                  </svg>
-                </span>
+                    <svg 
+                      v-if="getStarType(item.star, i) === 'full'"
+                      class="star full" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#ffd21e"/>
+                    </svg>
+                    <svg 
+                      v-else-if="getStarType(item.star, i) === 'half'"
+                      class="star half" 
+                      viewBox="0 0 24 24"
+                    >
+                      <defs>
+                        <linearGradient :id="'half-' + index + '-' + i">
+                          <stop offset="50%" stop-color="#ffd21e"/>
+                          <stop offset="50%" stop-color="#eee"/>
+                        </linearGradient>
+                      </defs>
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" :fill="'url(#half-' + index + '-' + i + ')'"/>
+                    </svg>
+                    <svg 
+                      v-else
+                      class="star empty" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#eee"/>
+                    </svg>
+                  </span>
+                </div>
+                <span class="rating-text">{{ getRatingText(item.star) }}</span>
               </div>
-              <span class="rating-text">{{ getRatingText(item.star) }}</span>
+            </div>
+
+            <!-- 评价内容（只读） -->
+            <div class="content-section readonly">
+              <label class="section-label">评价内容</label>
+              <div class="content-display">{{ item.content }}</div>
+            </div>
+
+            <!-- 评价图片（只读） -->
+            <div v-if="item.images && item.images.length > 0" class="image-section readonly">
+              <label class="section-label">评价图片</label>
+              <div class="image-preview-list">
+                <img 
+                  v-for="(img, imgIndex) in item.images" 
+                  :key="imgIndex"
+                  :src="img" 
+                  class="preview-image"
+                  @click="previewImage(item.images, imgIndex)"
+                />
+              </div>
+            </div>
+
+            <!-- 查看评论按钮 -->
+            <div class="view-comment-section">
+              <van-button 
+                type="primary" 
+                block 
+                round
+                @click="viewCommentDetail(item.commodityId)"
+              >
+                查看评论
+              </van-button>
             </div>
           </div>
 
-          <!-- 评价内容 -->
-          <div class="content-section">
-            <label class="section-label">评价内容</label>
-            <van-field
-              v-model="item.content"
-              rows="4"
-              autosize
-              type="textarea"
-              maxlength="500"
-              placeholder="分享你的使用感受吧~"
-              show-word-limit
-            />
-          </div>
+          <!-- 未评论状态 -->
+          <div v-else class="uncommented-section">
+            <!-- 评分 -->
+            <div class="rating-section">
+              <label class="section-label">商品评分</label>
+              <div class="star-rating">
+                <div class="stars" @mouseleave="handleMouseLeave(index)">
+                  <span 
+                    v-for="i in 5" 
+                    :key="i"
+                    class="star-wrapper"
+                    @mouseenter="handleStarHover(index, i)"
+                    @click="handleStarClick(index, i)"
+                  >
+                    <svg 
+                      v-if="getStarType(item.star, i) === 'full'"
+                      class="star full" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#ffd21e"/>
+                    </svg>
+                    <svg 
+                      v-else-if="getStarType(item.star, i) === 'half'"
+                      class="star half" 
+                      viewBox="0 0 24 24"
+                    >
+                      <defs>
+                        <linearGradient :id="'half-edit-' + index + '-' + i">
+                          <stop offset="50%" stop-color="#ffd21e"/>
+                          <stop offset="50%" stop-color="#eee"/>
+                        </linearGradient>
+                      </defs>
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" :fill="'url(#half-edit-' + index + '-' + i + ')'"/>
+                    </svg>
+                    <svg 
+                      v-else
+                      class="star empty" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#eee"/>
+                    </svg>
+                  </span>
+                </div>
+                <span class="rating-text">{{ getRatingText(item.star) }}</span>
+              </div>
+            </div>
 
-          <!-- 上传图片 -->
-          <div class="image-section">
-            <label class="section-label">上传图片（可选）</label>
-            <van-uploader 
-              v-model="item.images" 
-              multiple 
-              :max-count="6"
-              :after-read="(file) => handleImageUpload(file, index)"
-            />
-          </div>
+            <!-- 评价内容 -->
+            <div class="content-section">
+              <label class="section-label">评价内容</label>
+              <van-field
+                v-model="item.content"
+                rows="4"
+                autosize
+                type="textarea"
+                maxlength="500"
+                placeholder="分享你的使用感受吧~"
+                show-word-limit
+              />
+            </div>
 
-          <!-- 提交按钮 -->
-          <div class="submit-section">
-            <van-button 
-              type="primary" 
-              block 
-              round
-              :loading="item.submitting"
-              @click="submitComment(index)"
-            >
-              确认评价
-            </van-button>
+            <!-- 上传图片 -->
+            <div class="image-section">
+              <label class="section-label">上传图片（可选）</label>
+              <van-uploader 
+                v-model="item.fileList" 
+                multiple 
+                :max-count="6"
+                :after-read="(file) => handleImageUpload(file, index)"
+                :before-delete="() => handleImageDelete(index)"
+              >
+                <template #preview-cover="{ file }">
+                  <div class="preview-cover">
+                    <van-icon name="eye-o" @click.stop="previewSingleImage(file)" />
+                  </div>
+                </template>
+              </van-uploader>
+            </div>
+
+            <!-- 提交按钮 -->
+            <div class="submit-section">
+              <van-button 
+                type="primary" 
+                block 
+                round
+                :loading="item.submitting"
+                @click="submitComment(index)"
+              >
+                确认评价
+              </van-button>
+            </div>
           </div>
         </div>
       </div>
@@ -132,9 +218,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { showToast } from 'vant';
+import { showToast, showImagePreview } from 'vant';
 import { getOrderDetailSafe } from '@/api/order';
-import { createCommentSafe } from '@/api/comment';
+import { createCommentSafe, uploadCommentImageSafe, getOrderCommentStatusSafe } from '@/api/comment';
+import { saveScrollPosition } from '@/utils/scrollPosition';
 
 const router = useRouter();
 const route = useRoute();
@@ -147,7 +234,7 @@ const commentItems = ref([]);
 
 // 是否全部提交
 const allSubmitted = computed(() => {
-  return commentItems.value.length > 0 && commentItems.value.every(item => item.submitted);
+  return commentItems.value.length > 0 && commentItems.value.every(item => item.commented);
 });
 
 // 获取星星类型
@@ -169,39 +256,99 @@ const getRatingText = (rating) => {
 
 // 处理星星悬停
 const handleStarHover = (itemIndex, starPosition) => {
-  // 获取鼠标在星星内的位置，实现半星效果
   const item = commentItems.value[itemIndex];
-  item.hoverStar = starPosition;
+  if (!item.commented) {
+    item.hoverStar = starPosition;
+  }
 };
 
 // 处理鼠标离开
 const handleMouseLeave = (itemIndex) => {
   const item = commentItems.value[itemIndex];
-  item.hoverStar = 0;
+  if (!item.commented) {
+    item.hoverStar = 0;
+  }
 };
 
 // 处理星星点击
 const handleStarClick = (itemIndex, starPosition) => {
   const item = commentItems.value[itemIndex];
+  if (item.commented) return;
   
-  // 如果点击的是当前评分，则减少0.5星
   if (Math.ceil(item.star) === starPosition && item.star % 1 === 0) {
     item.star = starPosition - 0.5;
   } else {
     item.star = starPosition;
   }
   
-  // 限制最小为0.5星
   if (item.star < 0.5) {
     item.star = 0.5;
   }
 };
 
 // 处理图片上传
-const handleImageUpload = (file, itemIndex) => {
-  // 这里可以实现图片上传到服务器的逻辑
-  // 暂时使用本地预览
-  console.log('上传图片:', file, '商品索引:', itemIndex);
+const handleImageUpload = async (file, itemIndex) => {
+  const item = commentItems.value[itemIndex];
+  
+  try {
+    // 创建FormData
+    const formData = new FormData();
+    formData.append('file', file.file);
+    
+    // 上传图片
+    const result = await uploadCommentImageSafe(formData);
+    
+    if (result && result.imageUrl) {
+      // 保存图片URL
+      if (!item.uploadedImages) {
+        item.uploadedImages = [];
+      }
+      item.uploadedImages.push(result.imageUrl);
+      
+      console.log('图片上传成功:', result.imageUrl);
+    } else {
+      showToast('图片上传失败');
+      // 移除上传失败的文件
+      const fileIndex = item.fileList.findIndex(f => f.file === file.file);
+      if (fileIndex > -1) {
+        item.fileList.splice(fileIndex, 1);
+      }
+    }
+  } catch (error) {
+    console.error('图片上传失败:', error);
+    showToast('图片上传失败');
+    // 移除上传失败的文件
+    const fileIndex = item.fileList.findIndex(f => f.file === file.file);
+    if (fileIndex > -1) {
+      item.fileList.splice(fileIndex, 1);
+    }
+  }
+};
+
+// 处理图片删除
+const handleImageDelete = (itemIndex) => {
+  const item = commentItems.value[itemIndex];
+  // 清空已上传的图片URL列表
+  if (item.uploadedImages) {
+    item.uploadedImages = [];
+  }
+  return true;
+};
+
+// 预览单张图片
+const previewSingleImage = (file) => {
+  showImagePreview({
+    images: [file.content || file.url],
+    startPosition: 0,
+  });
+};
+
+// 预览图片列表
+const previewImage = (images, startIndex) => {
+  showImagePreview({
+    images: images,
+    startPosition: startIndex,
+  });
 };
 
 // 提交评价
@@ -222,18 +369,13 @@ const submitComment = async (itemIndex) => {
   try {
     item.submitting = true;
     
-    // 处理图片URL
-    const imageUrls = item.images.map(img => {
-      if (typeof img === 'string') return img;
-      if (img.url) return img.url;
-      if (img.content) return img.content; // base64
-      return '';
-    }).filter(url => url);
+    // 使用已上传的图片URL
+    const imageUrls = item.uploadedImages || [];
     
     const result = await createCommentSafe({
       commodityId: item.commodityId,
       orderId: orderDetail.value.id,
-      star: Math.round(item.star * 2) / 2, // 保留0.5精度
+      star: Math.round(item.star * 2) / 2,
       content: item.content,
       images: imageUrls
     });
@@ -243,20 +385,28 @@ const submitComment = async (itemIndex) => {
         message: '评价成功',
         icon: 'success'
       });
-      item.submitted = true;
       
-      // 如果全部评价完成，延迟返回
-      if (allSubmitted.value) {
-        setTimeout(() => {
-          // 不自动返回，让用户看到完成提示
-        }, 1000);
-      }
+      // 标记为已评论
+      item.commented = true;
+      item.images = imageUrls;
     }
   } catch (error) {
     console.error('提交评价失败:', error);
   } finally {
     item.submitting = false;
   }
+};
+
+// 查看评论详情
+const viewCommentDetail = (commodityId) => {
+  saveScrollPosition(route.path, window.scrollY || window.pageYOffset);
+  router.push(`/good-details?id=${commodityId}`);
+};
+
+// 跳转到商品详情
+const goToGoodDetail = (commodityId) => {
+  saveScrollPosition(route.path, window.scrollY || window.pageYOffset);
+  router.push(`/good-details?id=${commodityId}`);
 };
 
 // 加载订单详情
@@ -272,20 +422,46 @@ const loadOrderDetail = async () => {
   if (data) {
     orderDetail.value = data;
     
+    // 获取评论状态
+    const statusList = await getOrderCommentStatusSafe(orderId);
+    
     // 初始化评价项
-    commentItems.value = data.items.map(item => ({
-      id: item.id,
-      commodityId: item.commodityId,
-      commodityName: item.commodityName,
-      commodityPic: item.commodityPic,
-      commodityPrice: item.commodityPrice,
-      star: 5, // 默认5星
-      hoverStar: 0,
-      content: '',
-      images: [],
-      submitting: false,
-      submitted: false
-    }));
+    commentItems.value = data.items.map(item => {
+      // 查找该商品的评论状态
+      const status = statusList?.find(s => s.commodityId === item.commodityId);
+      
+      if (status && status.commented) {
+        // 已评论
+        return {
+          id: item.id,
+          commodityId: item.commodityId,
+          commodityName: item.commodityName,
+          commodityPic: item.commodityPic,
+          commodityPrice: item.commodityPrice,
+          commented: true,
+          star: status.star || 5,
+          content: status.content || '',
+          images: status.images || [],
+          createTime: status.createTime
+        };
+      } else {
+        // 未评论
+        return {
+          id: item.id,
+          commodityId: item.commodityId,
+          commodityName: item.commodityName,
+          commodityPic: item.commodityPic,
+          commodityPrice: item.commodityPrice,
+          commented: false,
+          star: 5,
+          hoverStar: 0,
+          content: '',
+          fileList: [],
+          uploadedImages: [],
+          submitting: false
+        };
+      }
+    });
   } else {
     showToast('加载订单详情失败');
     router.back();
@@ -363,10 +539,16 @@ onMounted(() => {
 
 /* 评价区域 */
 .comment-item {
-  background-color: #fffacd;
+  background-color: #fff;
   border-radius: 12px;
   padding: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s;
+}
+
+.comment-item.commented {
+  background-color: #f0f9ff;
+  border: 1px solid #e0f2fe;
 }
 
 /* 商品信息 */
@@ -376,6 +558,15 @@ onMounted(() => {
   padding-bottom: 16px;
   border-bottom: 1px solid #f5f5f5;
   margin-bottom: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  padding: 8px;
+  margin: -8px -8px 16px -8px;
+  border-radius: 8px;
+}
+
+.goods-info:hover {
+  background-color: rgba(0, 0, 0, 0.02);
 }
 
 .goods-image {
@@ -409,9 +600,19 @@ onMounted(() => {
   font-weight: 600;
 }
 
+.arrow-icon {
+  align-self: center;
+  color: #999;
+  font-size: 16px;
+}
+
 /* 评分区域 */
 .rating-section {
   margin-bottom: 16px;
+}
+
+.rating-section.readonly .stars {
+  pointer-events: none;
 }
 
 .section-label {
@@ -443,6 +644,14 @@ onMounted(() => {
   transform: scale(1.1);
 }
 
+.rating-section.readonly .star-wrapper {
+  cursor: default;
+}
+
+.rating-section.readonly .star-wrapper:hover {
+  transform: none;
+}
+
 .star {
   width: 32px;
   height: 32px;
@@ -464,13 +673,69 @@ onMounted(() => {
   margin-bottom: 16px;
 }
 
+.content-section.readonly {
+  margin-bottom: 16px;
+}
+
+.content-display {
+  background-color: #f5f5f5;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #333;
+  line-height: 1.6;
+  min-height: 80px;
+}
+
 /* 图片上传 */
 .image-section {
   margin-bottom: 16px;
 }
 
+.image-section.readonly {
+  margin-bottom: 16px;
+}
+
+.image-preview-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.preview-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.preview-image:hover {
+  transform: scale(1.05);
+}
+
+.preview-cover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  font-size: 20px;
+}
+
 /* 提交按钮 */
 .submit-section {
+  margin-top: 20px;
+}
+
+/* 查看评论按钮 */
+.view-comment-section {
   margin-top: 20px;
 }
 

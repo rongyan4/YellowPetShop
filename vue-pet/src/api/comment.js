@@ -57,3 +57,43 @@ export const createComment = (data) => {
 export const createCommentSafe = (data) => {
   return safeRequestData(createComment(data));
 };
+
+/**
+ * 上传评论图片
+ * @param {FormData} formData 包含图片文件的表单数据
+ * @returns {Promise} 返回上传结果响应对象
+ */
+export const uploadCommentImage = (formData) => {
+  return post('/comments/upload_image', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+};
+
+/**
+ * 安全上传评论图片
+ * @param {FormData} formData 包含图片文件的表单数据
+ * @returns {Promise} 成功返回图片URL，失败返回 null
+ */
+export const uploadCommentImageSafe = (formData) => {
+  return safeRequestData(uploadCommentImage(formData));
+};
+
+/**
+ * 获取订单商品的评论状态
+ * @param {Number} orderId 订单ID
+ * @returns {Promise} 返回评论状态列表
+ */
+export const getOrderCommentStatus = (orderId) => {
+  return get('/comments/order_status', { orderId });
+};
+
+/**
+ * 安全获取订单商品的评论状态
+ * @param {Number} orderId 订单ID
+ * @returns {Promise} 成功返回评论状态列表，失败返回 null
+ */
+export const getOrderCommentStatusSafe = (orderId) => {
+  return safeRequestData(getOrderCommentStatus(orderId));
+};

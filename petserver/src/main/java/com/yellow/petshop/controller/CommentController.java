@@ -5,10 +5,14 @@ import com.yellow.petshop.model.Result;
 import com.yellow.petshop.model.comment.CommentVO;
 import com.yellow.petshop.model.comment.CreateCommentDTO;
 import com.yellow.petshop.service.CommentService;
+import com.yellow.petshop.util.FileUploadUtil;
 import com.yellow.petshop.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.*;
 
 /**
  * 评论控制器
@@ -66,6 +70,70 @@ public class CommentController {
             Long userId = getUserIdFromToken(request);
             commentService.createComment(userId, dto);
             return Result.success("评论成功");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 上传评论图片
+     * 访问路径: POST /api/comments/upload_image
+     *
+     * @param file 图片文件
+     * @param request HTTP请求
+     * @return 图片URL
+     */
+    @PostMapping("/upload_image")
+    public Result<Map<String, Object>> uploadCommentImage(
+            @RequestParam("file") MultipartFile file,
+            HttpServletRequest request) {
+        
+        try {
+            // 获取用户ID
+            Long userId = getUserIdFromToken(request);
+            
+            // 使用统一的文件上传工具
+            FileUploadUtil.UploadResult result = FileUploadUtil.uploadFile(
+                file, 
+                FileUploadUtil.BusinessType.COMMENT_IMAGE, 
+                userId
+            );
+            
+            if (!result.isSuccess()) {
+                return Result.error(result.getMessage());
+            }
+            
+            // 返回结果
+            Map<String, Object> data = new HashMap<>();
+            data.put("imageUrl", result.getImageUrl());
+            data.put("fileName", result.getFileName());
+            data.put("fileSize", result.getFileSize());
+            data.put("uploadTime", result.getUploadTime());
+            
+            return Result.success(data);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("文件上传失败，请稍后重试");
+        }
+    }
+    
+    /**
+     * 获取订单商品的评论状态
+     * 访问路径: GET /api/comments/order_status?orderId=订单ID
+     *
+     * @param orderId 订单ID
+     * @param request HTTP请求
+     * @return 评论状态列表
+     */
+    @GetMapping("/order_status")
+    public Result<List<Map<String, Object>>> getOrderCommentStatus(
+            @RequestParam Long orderId,
+            HttpServletRequest request) {
+        try {
+            Long userId = getUserIdFromToken(request);
+            List<Map<String, Object>> statusList = commentService.getOrderCommentStatus(orderId, userId);
+            return Result.success(statusList);
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }

@@ -98,33 +98,6 @@
       </button>
     </div>
 
-    <!-- 图片裁剪对话框 -->
-    <van-popup v-model:show="showCropperDialog" position="center" :style="{ width: '90%', maxWidth: '600px', borderRadius: '16px' }">
-      <div class="dialog">
-        <div class="dialog-header">
-          <h3>裁剪图片</h3>
-          <button @click="closeCropper" class="close-btn">×</button>
-        </div>
-        <div class="dialog-body">
-          <div class="cropper-container">
-            <img ref="cropperImageElement" :src="cropperImage" class="cropper-image" />
-          </div>
-          <div class="cropper-tip">
-            <p>💡 操作提示：</p>
-            <ul>
-              <li>鼠标滚轮：缩放图片</li>
-              <li>拖动图片：调整位置</li>
-              <li>拖动裁剪框：调整裁剪区域</li>
-            </ul>
-          </div>
-        </div>
-        <div class="dialog-footer">
-          <button @click="closeCropper" class="btn-cancel">取消</button>
-          <button @click="confirmCrop" class="btn-confirm">确定裁剪</button>
-        </div>
-      </div>
-    </van-popup>
-
     <!-- 添加/编辑对话框 -->
     <van-popup v-model:show="showAddDialog" position="center" :style="{ width: '90%', maxWidth: '600px', borderRadius: '16px' }">
       <div class="dialog">
@@ -193,7 +166,7 @@
                   <polyline points="21 15 16 10 5 21"></polyline>
                 </svg>
                 <span>点击上传图片</span>
-                <span class="upload-tip">建议尺寸：1:1，支持jpg、png格式，最大5MB</span>
+                <span class="upload-tip">支持jpg、png、gif、webp格式，最大10MB</span>
               </div>
               <input 
                 ref="fileInput" 
@@ -250,12 +223,8 @@ const total = ref(0);
 const totalPages = ref(0);
 
 const showAddDialog = ref(false);
-const showCropperDialog = ref(false);
 const editingGoods = ref(null);
 const fileInput = ref(null);
-const cropperImageElement = ref(null);
-const cropperImage = ref('');
-let cropperInstance = null;
 
 const formData = ref({
   name: '',
@@ -334,6 +303,7 @@ const handleEdit = (item) => {
     msg: item.msg || '',
     detail: item.detail || ''
   };
+  console.log(formData);
   showAddDialog.value = true;
 };
 
@@ -450,7 +420,7 @@ const handleReupload = () => {
   fileInput.value?.click();
 };
 
-const handleFileSelect = (event) => {
+const handleFileSelect = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
   
@@ -460,129 +430,39 @@ const handleFileSelect = (event) => {
     return;
   }
   
-  // 验证文件大小（限制5MB）
-  if (file.size > 5 * 1024 * 1024) {
-    showToast('图片大小不能超过5MB');
+  // 验证文件大小（限制10MB）
+  if (file.size > 10 * 1024 * 1024) {
+    showToast('图片大小不能超过10MB');
     return;
   }
   
-  // 读取文件并显示裁剪器
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    cropperImage.value = e.target.result;
-    showCropperDialog.value = true;
-    
-    // 等待DOM更新后初始化裁剪器
-    nextTick(() => {
-      initCropper();
+  // 直接上传图片，不进行裁剪
+  try {
+    showToast({
+      message: '正在上传图片...',
+      duration: 0,
+      forbidClick: true,
     });
-  };
-  reader.readAsDataURL(file);
+    
+    const result = await uploadGoodsImage(file);
+    
+    if (result && result.code === 200) {
+      // 保存服务器返回的图片URL
+      formData.value.mainPicUrl = result.data.url;
+      showSuccessToast('图片上传成功');
+    } else {
+      showFailToast(result.msg || '图片上传失败');
+    }
+  } catch (error) {
+    console.error('上传图片失败:', error);
+    showFailToast('图片上传失败');
+  }
   
   // 清空input，允许重复选择同一文件
   event.target.value = '';
 };
 
-const initCropper = async () => {
-  if (!cropperImageElement.value) return;
-  
-  // 动态导入 cropperjs
-  try {
-    const { default: Cropper } = await import('cropperjs');
-    
-    // 动态加载 CSS
-    if (!document.getElementById('cropper-css')) {
-      const link = document.createElement('link');
-      link.id = 'cropper-css';
-      link.rel = 'stylesheet';
-      link.href = 'https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css';
-      document.head.appendChild(link);
-    }
-    
-    // 销毁旧的实例
-    if (cropperInstance) {
-      cropperInstance.destroy();
-    }
-    
-    // 创建新的裁剪器实例
-    cropperInstance = new Cropper(cropperImageElement.value, {
-      aspectRatio: 1, // 1:1 比例
-      viewMode: 1, // 限制裁剪框在画布内
-      dragMode: 'move', // 拖动模式：移动图片
-      autoCropArea: 0.8, // 自动裁剪区域占比
-      restore: false,
-      guides: true, // 显示网格线
-      center: true, // 显示中心指示器
-      highlight: true,
-      cropBoxMovable: true, // 裁剪框可移动
-      cropBoxResizable: true, // 裁剪框可调整大小
-      toggleDragModeOnDblclick: true, // 双击切换拖动模式
-      background: true,
-      modal: true,
-      responsive: true,
-      checkOrientation: true,
-      checkCrossOrigin: true,
-    });
-  } catch (error) {
-    console.error('加载裁剪器失败:', error);
-    showFailToast('图片裁剪功能加载失败，请刷新页面重试');
-  }
-};
 
-const confirmCrop = async () => {
-  if (!cropperInstance) return;
-  
-  try {
-    // 获取裁剪后的canvas
-    const canvas = cropperInstance.getCroppedCanvas({
-      width: 800, // 输出宽度
-      height: 800, // 输出高度
-      imageSmoothingEnabled: true,
-      imageSmoothingQuality: 'high',
-    });
-    
-    // 将canvas转换为blob
-    canvas.toBlob(async (blob) => {
-      try {
-        // 创建File对象
-        const file = new File([blob], 'goods-image.jpg', { type: 'image/jpeg' });
-        
-        // 上传到服务器
-        showToast({
-          message: '正在上传图片...',
-          duration: 0,
-          forbidClick: true,
-        });
-        
-        const result = await uploadGoodsImage(file);
-        
-        if (result && result.code === 200) {
-          // 保存服务器返回的图片URL
-          formData.value.mainPicUrl = result.data.url;
-          closeCropper();
-          showSuccessToast('图片上传成功');
-        } else {
-          showFailToast(result.msg || '图片上传失败');
-        }
-      } catch (error) {
-        console.error('上传图片失败:', error);
-        showFailToast('图片上传失败');
-      }
-    }, 'image/jpeg', 0.9); // JPEG格式，质量90%
-  } catch (error) {
-    console.error('裁剪图片失败:', error);
-    showFailToast('图片裁剪失败');
-  }
-};
-
-const closeCropper = () => {
-  if (cropperInstance) {
-    cropperInstance.destroy();
-    cropperInstance = null;
-  }
-  showCropperDialog.value = false;
-  cropperImage.value = '';
-};
 
 // 获取完整图片URL
 const getImageUrl = (url) => {
@@ -591,8 +471,8 @@ const getImageUrl = (url) => {
   if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
   }
-  // 如果是相对路径，拼接服务器地址
-  return `http://localhost:8081${url}`;
+  // 如果是相对路径，直接返回（通过代理访问）
+  return url;
 };
 
 onMounted(() => {
@@ -1051,46 +931,6 @@ onMounted(() => {
 .upload-tip {
   font-size: 12px !important;
   color: #95a5a6 !important;
-}
-
-/* 裁剪器容器 */
-.cropper-container {
-  width: 100%;
-  max-height: 500px;
-  background: #000;
-  border-radius: 8px;
-  overflow: hidden;
-  margin-bottom: 16px;
-}
-
-.cropper-image {
-  max-width: 100%;
-  display: block;
-}
-
-.cropper-tip {
-  background: #f8f9fa;
-  padding: 16px;
-  border-radius: 8px;
-  font-size: 13px;
-  color: #636e72;
-}
-
-.cropper-tip p {
-  margin: 0 0 8px 0;
-  font-weight: 600;
-  color: #2d3436;
-}
-
-.cropper-tip ul {
-  margin: 0;
-  padding-left: 20px;
-  list-style: disc;
-}
-
-.cropper-tip li {
-  margin: 4px 0;
-  line-height: 1.6;
 }
 
 .dialog-footer {

@@ -47,6 +47,7 @@
             </td>
             <td>
               <div class="action-buttons">
+                <button @click="handleViewDetail(item)" class="btn-detail">详情</button>
                 <button 
                   @click="handleToggleStatus(item)" 
                   :class="item.isValid === 1 ? 'btn-disable' : 'btn-enable'"
@@ -85,8 +86,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { getMerchantMemberList, updateMemberStatus, deleteMember } from '@/api/merchantMember';
 import { showConfirmDialog, showSuccessToast, showFailToast } from 'vant';
+
+const router = useRouter();
 
 const searchKeyword = ref('');
 const memberList = ref([]);
@@ -124,6 +128,10 @@ const handlePageChange = (page) => {
     currentPage.value = page;
     loadMemberList();
   }
+};
+
+const handleViewDetail = (item) => {
+  router.push(`/merchant/member/${item.id}`);
 };
 
 const handleToggleStatus = (item) => {
@@ -285,6 +293,7 @@ onMounted(() => {
   gap: 8px;
 }
 
+.btn-detail,
 .btn-enable,
 .btn-disable,
 .btn-delete {
@@ -294,6 +303,15 @@ onMounted(() => {
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+.btn-detail {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.btn-detail:hover {
+  background: #bbdefb;
 }
 
 .btn-enable {

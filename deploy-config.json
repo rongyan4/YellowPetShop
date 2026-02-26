@@ -1,0 +1,22 @@
+{
+  "server": {
+    "host": "95.40.58.178",
+    "port": 22,
+    "username": "root",
+    "password": "linzichao"
+  },
+  "paths": {
+    "frontend": {
+      "localBuildDir": "./vue-pet/dist",
+      "remotePath": "/var/www/petshop"
+    },
+    "backend": {
+      "localBuildDir": "./petserver/target",
+      "remotePath": "/opt/petshop"
+    }
+  },
+  "services": {
+    "backend": "petshop",
+    "frontend": "nginx"
+  }
+}

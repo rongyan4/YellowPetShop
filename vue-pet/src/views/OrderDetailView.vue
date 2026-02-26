@@ -110,6 +110,13 @@
       >
         确认收货
       </van-button>
+      <van-button 
+        v-if="orderDetail.status === 'COMPLETED'" 
+        type="primary"
+        @click="goToComment"
+      >
+        评价订单
+      </van-button>
     </div>
 
     <!-- 支付方式选择弹窗 -->
@@ -564,6 +571,12 @@ const goToGoodDetail = (commodityId) => {
   // 保存当前滚动位置
   saveScrollPosition(route.path, window.scrollY || window.pageYOffset);
   router.push(`/good-details?id=${commodityId}`);
+};
+
+// 去评价
+const goToComment = () => {
+  saveScrollPosition(route.path, window.scrollY || window.pageYOffset);
+  router.push(`/order/comment/${orderDetail.value.id}`);
 };
 
 onMounted(() => {

@@ -4,6 +4,9 @@ import com.yellow.petshop.model.PageResult;
 import com.yellow.petshop.model.comment.CommentVO;
 import com.yellow.petshop.model.comment.CreateCommentDTO;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * 评论服务接口
  */
@@ -31,4 +34,12 @@ public interface CommentService {
      * @param dto 评论DTO
      */
     void createComment(Long userId, CreateCommentDTO dto);
+    
+    /**
+     * 获取订单商品的评论状态
+     * @param orderId 订单ID
+     * @param userId 用户ID
+     * @return 评论状态列表
+     */
+    List<Map<String, Object>> getOrderCommentStatus(Long orderId, Long userId);
 }

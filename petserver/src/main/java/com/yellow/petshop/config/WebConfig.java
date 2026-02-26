@@ -61,14 +61,14 @@ public class WebConfig implements WebMvcConfigurer {
      * 使用 /api/images 避免与前端 public/images 冲突
      * @param registry 资源处理器注册器
      */
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 映射头像等图片资源
-        registry.addResourceHandler("/api/images/**")
-                .addResourceLocations("classpath:/static/images/");
-        
-        // 映射评论图片资源
-        registry.addResourceHandler("/comment_image/**")
-                .addResourceLocations("classpath:/public/comment_image/");
-    }
+//    @Override
+//    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+//        // 映射头像等图片资源
+//        registry.addResourceHandler("/api/images/**")
+//                .addResourceLocations("classpath:/static/images/");
+//
+//        // 映射评论图片资源
+//        registry.addResourceHandler("/comment_image/**")
+//                .addResourceLocations("classpath:/public/comment_image/");
+//    }
 }

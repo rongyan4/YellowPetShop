@@ -4,20 +4,21 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.yellow.petshop.mapper.CommentImageMapper;
 import com.yellow.petshop.mapper.CommentMapper;
 import com.yellow.petshop.mapper.OrderMapper;
+import com.yellow.petshop.mapper.OrderItemMapper;
 import com.yellow.petshop.model.PageResult;
 import com.yellow.petshop.model.comment.Comment;
 import com.yellow.petshop.model.comment.CommentImage;
 import com.yellow.petshop.model.comment.CommentVO;
 import com.yellow.petshop.model.comment.CreateCommentDTO;
 import com.yellow.petshop.model.order.Order;
+import com.yellow.petshop.model.order.OrderItem;
 import com.yellow.petshop.service.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +35,9 @@ public class CommentServiceImpl implements CommentService {
     
     @Autowired
     private OrderMapper orderMapper;
+    
+    @Autowired
+    private OrderItemMapper orderItemMapper;
     
     @Override
     public PageResult<CommentVO> getCommentsByPage(Long commodityId, Long current, Long size) {
@@ -153,5 +157,62 @@ public class CommentServiceImpl implements CommentService {
                 commentMapper.updateById(parentComment);
             }
         }
+    }
+    
+    @Override
+    public List<Map<String, Object>> getOrderCommentStatus(Long orderId, Long userId) {
+        // 获取订单信息
+        Order order = orderMapper.selectById(orderId);
+        if (order == null) {
+            throw new RuntimeException("订单不存在");
+        }
+        if (!order.getUserId().equals(userId)) {
+            throw new RuntimeException("无权查看此订单");
+        }
+        
+        // 获取订单商品列表
+        QueryWrapper<OrderItem> itemWrapper = new QueryWrapper<>();
+        itemWrapper.eq("order_id", orderId);
+        List<OrderItem> orderItems = orderItemMapper.selectList(itemWrapper);
+        
+        // 查询每个商品的评论状态
+        List<Map<String, Object>> statusList = new ArrayList<>();
+        for (OrderItem item : orderItems) {
+            Map<String, Object> status = new HashMap<>();
+            status.put("commodityId", item.getCommodityId());
+            
+            // 查询是否已评论
+            QueryWrapper<Comment> commentWrapper = new QueryWrapper<>();
+            commentWrapper.eq("order_id", orderId);
+            commentWrapper.eq("commodity_id", item.getCommodityId());
+            commentWrapper.eq("user_id", userId);
+            Comment comment = commentMapper.selectOne(commentWrapper);
+            
+            if (comment != null) {
+                // 已评论，返回评论信息
+                status.put("commented", true);
+                status.put("commentId", comment.getId());
+                status.put("star", comment.getStar());
+                status.put("content", comment.getContent());
+                status.put("createTime", comment.getCreateTime());
+                
+                // 查询评论图片
+                QueryWrapper<CommentImage> imageWrapper = new QueryWrapper<>();
+                imageWrapper.eq("comment_id", comment.getId());
+                imageWrapper.orderByAsc("sort_order");
+                List<CommentImage> images = commentImageMapper.selectList(imageWrapper);
+                List<String> imageUrls = images.stream()
+                        .map(CommentImage::getImageUrl)
+                        .collect(Collectors.toList());
+                status.put("images", imageUrls);
+            } else {
+                // 未评论
+                status.put("commented", false);
+            }
+            
+            statusList.add(status);
+        }
+        
+        return statusList;
     }
 }
