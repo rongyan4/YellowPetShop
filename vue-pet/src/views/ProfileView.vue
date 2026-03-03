@@ -8,13 +8,7 @@
         </svg>
       </div>
       <div class="nav-title">个人资料</div>
-      <div class="nav-right">
-        <svg viewBox="0 0 24 24" width="24" height="24">
-          <circle cx="12" cy="6" r="1.5" fill="currentColor"/>
-          <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
-          <circle cx="12" cy="18" r="1.5" fill="currentColor"/>
-        </svg>
-      </div>
+      <div class="nav-right"></div>
     </div>
 
     <!-- 头像区域 - 使用 Uploader 自定义预览样式 -->
@@ -217,8 +211,7 @@ const editBirthday = () => {
 
 // 编辑收货地址
 const editAddress = () => {
-  console.log('编辑收货地址');
-  // TODO: 实现编辑收货地址功能
+  router.push('/address/list');
 };
 
 // 处理头像上传

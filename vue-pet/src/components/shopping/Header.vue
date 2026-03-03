@@ -1,12 +1,6 @@
 <template>
   <div class="top-bar-main">
     <div class="top-bar-input" @click="handleSearchClick">
-      <!-- 清空按钮（输入框不为空时显示） -->
-      <i 
-        v-if="searchKeyword.trim()" 
-        class="iconfont icon-guanbi clear-btn" 
-        @click.stop="handleClear"
-      ></i>
       <input 
         v-model="searchKeyword" 
         type="text" 
@@ -15,6 +9,12 @@
         @keyup.enter="handleSearch"
         @click.stop
       />
+      <!-- 清空按钮（输入框不为空时显示） -->
+      <i 
+        v-if="searchKeyword.trim()" 
+        class="iconfont icon-guanbi clear-btn" 
+        @click.stop="handleClear"
+      ></i>
       <i class="iconfont icon-sousuo1" @click.stop="handleSearch"></i>
     </div>
     <div class="duihua">
@@ -98,22 +98,6 @@ defineExpose({
     cursor: pointer;
     position: relative;
     
-    .clear-btn {
-      font-size: .4rem;
-      color: #999;
-      cursor: pointer;
-      margin-right: .2rem;
-      transition: color 0.2s;
-      
-      &:hover {
-        color: #666;
-      }
-      
-      &:active {
-        transform: scale(0.9);
-      }
-    }
-    
     .search-input {
       flex: 1;
       border: none;
@@ -125,6 +109,23 @@ defineExpose({
       
       &::placeholder {
         color: #999;
+      }
+    }
+    
+    .clear-btn {
+      font-size: .4rem;
+      color: #999;
+      cursor: pointer;
+      margin-left: .2rem;
+      margin-right: .2rem;
+      transition: color 0.2s;
+      
+      &:hover {
+        color: #666;
+      }
+      
+      &:active {
+        transform: scale(0.9);
       }
     }
     

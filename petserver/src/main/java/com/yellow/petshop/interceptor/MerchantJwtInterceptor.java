@@ -7,11 +7,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
- * JWT拦截器
- * 用于验证请求中的JWT Token
+ * 商家端JWT拦截器
+ * 用于验证商家端请求中的JWT Token，防止客户端token越权访问商家端接口
  */
 @Component
-public class JwtInterceptor implements HandlerInterceptor {
+public class MerchantJwtInterceptor implements HandlerInterceptor {
 
     private final JwtUtil jwtUtil = new JwtUtil();
 
@@ -34,9 +34,7 @@ public class JwtInterceptor implements HandlerInterceptor {
         
         // 检查Authorization头是否存在
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json;charset=UTF-8");
-            response.getWriter().write("{\"code\":401,\"msg\":\"未提供认证令牌\",\"data\":null}");
+            sendErrorResponse(response, 401, "未提供认证令牌");
             return false;
         }
 
@@ -46,27 +44,43 @@ public class JwtInterceptor implements HandlerInterceptor {
         try {
             // 验证Token是否有效
             if (!jwtUtil.validateToken(token)) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.setContentType("application/json;charset=UTF-8");
-                response.getWriter().write("{\"code\":401,\"msg\":\"认证令牌无效或已过期\",\"data\":null}");
+                sendErrorResponse(response, 401, "认证令牌无效或已过期");
                 return false;
             }
 
-            // 提取用户ID并存储到请求属性中，供后续Controller使用
-            Long userId = jwtUtil.extractUserId(token);
+            // 验证Token类型是否为商家端
+            if (!JwtUtil.isMerchantToken(token)) {
+                sendErrorResponse(response, 403, "无权访问商家端接口，请使用商家账号登录");
+                return false;
+            }
+
+            // 提取商家ID并存储到请求属性中，供后续Controller使用
+            Long merchantId = jwtUtil.extractUserId(token);
             String username = jwtUtil.extractusername(token);
-            request.setAttribute("userId", userId);
+            String userType = jwtUtil.extractUserType(token);
+            
+            request.setAttribute("merchantId", merchantId);
+            request.setAttribute("userId", merchantId); // 兼容旧代码
+            request.setAttribute("username", username);
+            request.setAttribute("userType", userType);
             
             // Token验证通过，继续处理请求
             return true;
 
         } catch (Exception e) {
             // Token解析失败
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json;charset=UTF-8");
-            response.getWriter().write("{\"code\":401,\"msg\":\"认证令牌解析失败\",\"data\":null}");
+            sendErrorResponse(response, 401, "认证令牌解析失败");
             return false;
         }
+    }
+
+    /**
+     * 发送错误响应
+     */
+    private void sendErrorResponse(HttpServletResponse response, int status, String message) throws Exception {
+        response.setStatus(status);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(String.format("{\"code\":%d,\"msg\":\"%s\",\"data\":null}", status, message));
     }
 
     /**

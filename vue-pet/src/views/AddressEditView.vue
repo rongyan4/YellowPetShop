@@ -146,7 +146,17 @@ onMounted(() => {
   const addressId = route.query.id;
   if (addressId) {
     isEdit.value = true;
-    // TODO: 加载地址详情
+    // 从路由参数中加载地址详情
+    addressInfo.value = {
+      name: route.query.receiverName || '',
+      tel: route.query.receiverPhone || '',
+      province: route.query.province || '',
+      city: route.query.city || '',
+      county: route.query.district || '',
+      addressDetail: route.query.detailAddress || '',
+      areaCode: '',
+      isDefault: route.query.isDefault === 'true' || route.query.isDefault === true
+    };
   }
 });
 </script>

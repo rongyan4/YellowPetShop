@@ -99,7 +99,7 @@ const bannerImages = ref([
 ]);
 
 const features = ref([
-  { type: 'coupon-exchange', title: '券码兑换', icon: 'iconfont icon-piao' },
+  { type: 'pet-profile', title: '宠物档案', icon: 'iconfont icon-piao' },
   { type: 'member-exchange', title: '会员兑换', icon: 'iconfont icon-gift' },
   { type: 'points-lottery', title: '积分抽奖', icon: 'iconfont icon-lottery', badge: '周三特惠' },
   { type: 'promotions', title: '优惠活动', icon: 'iconfont icon-promotion' }
@@ -148,7 +148,18 @@ const handleServiceClick = (type) => {
 
 const handleFeatureClick = (type) => {
   console.log('点击功能:', type);
-  // 处理功能点击逻辑
+  
+  if (type === 'pet-profile') {
+    // 宠物档案功能
+    if (!props.isLoggedIn) {
+      showLoginChoice.value = true;
+    } else {
+      router.push('/pet-profile');
+    }
+  } else {
+    // 其他功能暂未实现
+    console.log('功能开发中:', type);
+  }
 };
 
 const onImageLoad = (event) => {

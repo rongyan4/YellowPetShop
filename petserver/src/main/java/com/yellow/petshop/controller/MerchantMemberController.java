@@ -18,6 +18,7 @@ public class MerchantMemberController {
     
     @Autowired
     private MerchantMemberService memberService;
+    
 
     /**
      * 获取会员列表

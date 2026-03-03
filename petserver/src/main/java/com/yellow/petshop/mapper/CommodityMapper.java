@@ -86,4 +86,21 @@ public interface CommodityMapper extends BaseMapper<CommodityInfo> {
      */
     @Update("UPDATE commodity SET sold = sold + #{quantity} WHERE id = #{commodityId}")
     int increaseSold(@Param("commodityId") Long commodityId, @Param("quantity") Integer quantity);
+    
+    /**
+     * 查询热门商品（按销量排序）
+     * @param limit 数量限制
+     * @return 商品列表
+     */
+    @Select("SELECT * FROM commodity WHERE is_valid = 1 ORDER BY sold DESC, id DESC LIMIT #{limit}")
+    List<CommodityInfo> selectHotGoods(@Param("limit") int limit);
+    
+    /**
+     * 根据关键词搜索商品
+     * @param keyword 关键词
+     * @param limit 数量限制
+     * @return 商品列表
+     */
+    @Select("SELECT * FROM commodity WHERE is_valid = 1 AND (name LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%')) ORDER BY sold DESC LIMIT #{limit}")
+    List<CommodityInfo> searchByKeyword(@Param("keyword") String keyword, @Param("limit") int limit);
 }

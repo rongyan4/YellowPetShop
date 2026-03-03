@@ -71,28 +71,7 @@ import { showToast, showConfirmDialog } from 'vant';
 const router = useRouter();
 
 // 地址列表
-const addressList = ref([
-  {
-    id: 1,
-    receiverName: '张三',
-    receiverPhone: '138****5678',
-    province: '广东省',
-    city: '深圳市',
-    district: '南山区',
-    detailAddress: '科技园南区深圳湾科技生态园10栋A座',
-    isDefault: true
-  },
-  {
-    id: 2,
-    receiverName: '李四',
-    receiverPhone: '139****1234',
-    province: '广东省',
-    city: '广州市',
-    district: '天河区',
-    detailAddress: '珠江新城花城大道88号',
-    isDefault: false
-  }
-]);
+const addressList = ref([]);
 
 // 返回上一页
 const goBack = () => {
@@ -115,8 +94,19 @@ const addAddress = () => {
 // 编辑地址
 const editAddress = (address) => {
   console.log('编辑地址:', address);
-  showToast('编辑地址功能开发中');
-  // TODO: 跳转到编辑地址页面
+  router.push({
+    path: '/address-edit',
+    query: {
+      id: address.id,
+      receiverName: address.receiverName,
+      receiverPhone: address.receiverPhone,
+      province: address.province,
+      city: address.city,
+      district: address.district,
+      detailAddress: address.detailAddress,
+      isDefault: address.isDefault
+    }
+  });
 };
 
 // 删除地址

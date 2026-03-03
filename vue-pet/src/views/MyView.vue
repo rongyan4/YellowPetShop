@@ -71,16 +71,6 @@
         <span class="menu-text">我的客服</span>
         <i class="arrow-right">›</i>
       </div>
-
-      <div class="menu-item" @click="handleMenuClick('booking')">
-        <span class="menu-text">团餐预定</span>
-        <i class="arrow-right">›</i>
-      </div>
-
-      <div class="menu-item" @click="handleMenuClick('exchange')">
-        <span class="menu-text">兑换中心</span>
-        <i class="arrow-right">›</i>
-      </div>
     </div>
 
     <!-- 登录弹窗 -->
@@ -148,6 +138,13 @@ const assets = ref({
   wallet: 0.00,
   points: 0
 });
+
+// 加载用户积分
+const loadUserPoints = () => {
+  if (isLoggedIn.value && userStore.userInfo) {
+    assets.value.points = userStore.userInfo.currentPoints || 0;
+  }
+};
 
 // 会员等级相关展示（使用后端返回的数据）
 const vipLevelText = computed(() => {
@@ -268,14 +265,6 @@ const handleMenuClick = (type) => {
       // router.push('/service');
       console.log('跳转到我的客服');
       break;
-    case 'booking':
-      // router.push('/booking');
-      console.log('跳转到团餐预定');
-      break;
-    case 'exchange':
-      // router.push('/exchange');
-      console.log('跳转到兑换中心');
-      break;
   }
 };
 
@@ -287,8 +276,9 @@ const closeLoginModal = () => {
 // 监听登录状态变化
 watch(() => userStore.isLoggedIn, (newVal) => {
   if (newVal) {
-    // 登录成功后加载钱包余额
+    // 登录成功后加载钱包余额和积分
     loadWalletBalance();
+    loadUserPoints();
   } else {
     // 退出登录时清空资产数据
     assets.value.wallet = 0.00;
@@ -299,9 +289,10 @@ watch(() => userStore.isLoggedIn, (newVal) => {
 });
 
 onMounted(() => {
-  // 页面加载时，如果已登录，加载钱包余额
+  // 页面加载时，如果已登录，加载钱包余额和积分
   if (isLoggedIn.value) {
     loadWalletBalance();
+    loadUserPoints();
   }
 });
 </script>
@@ -360,29 +351,61 @@ onMounted(() => {
 /* VIP卡片 */
 .vip-card {
   margin: 16px 20px;
-  background: linear-gradient(135deg, #e8dcc4 0%, #d4c5a9 100%);
-  border-radius: 12px;
-  padding: 30px 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 16px;
+  padding: 32px 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.vip-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.vip-card::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
 }
 
 .vip-title {
-  font-size: 28px;
-  font-weight: 500;
-  color: #4a4a4a;
-  margin-bottom: 40px;
-  letter-spacing: 2px;
+  font-size: 32px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 16px;
+  letter-spacing: 3px;
   font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  position: relative;
+  z-index: 1;
 }
 
 .vip-progress {
-  margin-top: 20px;
+  margin-top: 12px;
+  position: relative;
+  z-index: 1;
 }
 
 .progress-text {
-  font-size: 15px;
-  color: #666;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
   font-weight: 400;
+  line-height: 1.6;
 }
 
 /* 资产统计 */

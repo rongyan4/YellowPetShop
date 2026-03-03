@@ -101,6 +101,35 @@ const routes = [
       import("../views/BrowseHistoryView.vue"),
     meta: { requiresAuth: true }
   },
+  // ==================== 宠物档案路由 ====================
+  {
+    path: "/pet-profile",
+    name: "pet-profile-list",
+    component: () =>
+      import("../views/pet/PetProfileList.vue"),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: "/pet-profile/detail/:id",
+    name: "pet-profile-detail",
+    component: () =>
+      import("../views/pet/PetProfileDetail.vue"),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: "/pet-profile/add",
+    name: "pet-profile-add",
+    component: () =>
+      import("../views/pet/PetProfileEdit.vue"),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: "/pet-profile/edit/:id",
+    name: "pet-profile-edit",
+    component: () =>
+      import("../views/pet/PetProfileEdit.vue"),
+    meta: { requiresAuth: true }
+  },
   {
     path: "/order/detail/:id",
     name: "order-detail",

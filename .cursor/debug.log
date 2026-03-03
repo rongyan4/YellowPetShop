@@ -1,1 +1,0 @@
-{"id":"log_1771987441627_method_arg_mismatch","runId":"initial","hypothesisId":"H1","location":"GlobalExceptionHandler.java:handleMethodArgumentTypeMismatch","message":"MethodArgumentTypeMismatchException captured","data":{"requestUri":"/api/merchant/member/list","parameterName":"userId","requiredType":"Long"},"timestamp":1771987441627}

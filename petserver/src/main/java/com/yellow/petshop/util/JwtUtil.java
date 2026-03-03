@@ -17,7 +17,7 @@ public class JwtUtil {
     @Value("${jwt.secret}")
     private String secret = "2F9s7k8d6j5g4h3f2d1s0a9s8d7f6g5h4j3k2l1m0n9b8v7c6x5z4a8s7d6f5g4h3j2=";
 
-    //生成token（使用User对象）
+    //生成token（使用User对象 - 客户端）
     public String generateToken(User user) {
         SecretKey key = Keys.hmacShaKeyFor(secret.getBytes());
         return Jwts.builder()
@@ -27,6 +27,7 @@ public class JwtUtil {
                 //Payload
                 .setSubject(user.getId().toString())
                 .claim("username", user.getUsername())
+                .claim("userType", "customer")  // 标识为客户端用户
                 .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
                 .setId(UUID.randomUUID().toString())
                 //Signature
@@ -34,7 +35,7 @@ public class JwtUtil {
                 .compact();
     }
     
-    //生成token（使用ID和用户名）
+    //生成token（使用ID和用户名 - 商家端）
     public static String generateToken(Long userId, String username) {
         JwtUtil jwtUtil = new JwtUtil();
         SecretKey key = Keys.hmacShaKeyFor(jwtUtil.secret.getBytes());
@@ -45,6 +46,7 @@ public class JwtUtil {
                 //Payload
                 .setSubject(userId.toString())
                 .claim("username", username)
+                .claim("userType", "merchant")  // 标识为商家端用户
                 .setExpiration(new Date(System.currentTimeMillis() + jwtUtil.expirationTime))
                 .setId(UUID.randomUUID().toString())
                 //Signature
@@ -62,6 +64,34 @@ public class JwtUtil {
     public String extractusername(String token) {
         Claims claims = extractClaims(token);
         return claims.get("username", String.class);
+    }
+    
+    //提取用户类型
+    public String extractUserType(String token) {
+        Claims claims = extractClaims(token);
+        return claims.get("userType", String.class);
+    }
+    
+    // 静态方法：从Token中获取用户类型
+    public static String getUserTypeFromToken(String token) {
+        try {
+            JwtUtil jwtUtil = new JwtUtil();
+            return jwtUtil.extractUserType(token);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
+    // 验证Token是否为商家端token
+    public static boolean isMerchantToken(String token) {
+        String userType = getUserTypeFromToken(token);
+        return "merchant".equals(userType);
+    }
+    
+    // 验证Token是否为客户端token
+    public static boolean isCustomerToken(String token) {
+        String userType = getUserTypeFromToken(token);
+        return "customer".equals(userType);
     }
     
     // 静态方法：从Token中获取用户ID（用于Controller）
