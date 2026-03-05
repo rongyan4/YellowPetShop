@@ -238,13 +238,13 @@
               :key="key"
               class="keyboard-key"
               :class="{ 
-                delete: key === 'delete',
+                backspace: key === 'backspace',
                 clear: key === 'clear',
                 disabled: key === '' 
               }"
               @click="handleKeyPress(key)"
             >
-              <van-icon v-if="key === 'delete'" name="back-top" />
+              <van-icon v-if="key === 'backspace'" name="arrow-left" />
               <van-icon v-else-if="key === 'clear'" name="delete-o" />
               <span v-else>{{ key }}</span>
             </div>
@@ -298,7 +298,7 @@ const keyboard = [
   ['1', '2', '3'],
   ['4', '5', '6'],
   ['7', '8', '9'],
-  ['clear', '0', 'delete']
+  ['clear', '0', 'backspace']
 ];
 
 // 格式化时间
@@ -428,7 +428,7 @@ const confirmPaymentMethod = () => {
 const handleKeyPress = (key) => {
   if (key === '') return;
   
-  if (key === 'delete') {
+  if (key === 'backspace') {
     password.value = password.value.slice(0, -1);
     passwordError.value = '';
   } else if (key === 'clear') {
@@ -438,6 +438,7 @@ const handleKeyPress = (key) => {
     if (password.value.length < 6) {
       password.value += key;
       
+      // 当密码达到6位时，验证密码
       if (password.value.length === 6) {
         payOrder();
       }
@@ -489,7 +490,7 @@ const payOrder = async () => {
         // 跳转到钱包充值页面（如果有的话）
         showToast('充值功能开发中');
       }).catch(() => {});
-    } else if (error.message && error.message.includes('密码错误')) {
+    } else if (error.message || error.message.includes('密码错误')) {
       // 密码错误
       errorCount.value++;
       passwordError.value = error.message;
@@ -923,7 +924,7 @@ onUnmounted(() => {
   color: #fff;
 }
 
-.keyboard-key.delete {
+.keyboard-key.backspace {
   background-color: #f5f5f5;
   color: #666;
 }

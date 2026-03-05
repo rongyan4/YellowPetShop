@@ -35,7 +35,8 @@ import {
   Radio,
   RadioGroup,
   Stepper,
-  Dialog
+  Dialog,
+  actionSheet
 } from 'vant';
 
 
@@ -72,4 +73,5 @@ app.use(pinia)
    .use(RadioGroup)
    .use(Stepper)
    .use(Dialog)
+   .use(actionSheet)
    .mount("#app");

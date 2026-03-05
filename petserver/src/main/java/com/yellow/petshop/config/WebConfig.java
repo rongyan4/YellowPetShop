@@ -59,6 +59,7 @@ public class WebConfig implements WebMvcConfigurer {
 //                )
                 .addPathPatterns("/api/**")
                 .excludePathPatterns(
+                        "/api/merchant/**",              //商家接口
                         "/api/user/login",               // 客户登录接口
                         "/api/user/register",             // 客户注册接口
                         "/api/goods/**",                    //(商品浏览)

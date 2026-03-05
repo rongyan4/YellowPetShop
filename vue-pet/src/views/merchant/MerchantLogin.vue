@@ -3,7 +3,7 @@
     <!-- 左侧大图 -->
     <div class="login-image">
       <div class="image-overlay">
-        <h1 class="brand-title">黄色宠物商城</h1>
+        <h1 class="brand-title">大黄宠物商城</h1>
         <p class="brand-subtitle">商家管理系统</p>
       </div>
     </div>

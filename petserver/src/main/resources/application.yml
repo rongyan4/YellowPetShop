@@ -8,6 +8,10 @@ logging:
 spring:
   application:
     name: petserver
+  #SpringAI 配置
+  ai:
+    deepseek:
+      api-key: ${DEEPSEEK_API_KEY}
 
   # 数据源配置（支持环境变量覆盖）
   datasource:
@@ -71,3 +75,5 @@ file:
     base-dir: ${FILE_UPLOAD_BASE_DIR:c:/Users/rongyan/Desktop/ks/YellowPetShop/images}
     # 文件访问路径前缀（后端映射路径）
     url-prefix: ${FILE_URL_PREFIX:/api/images}
+
+

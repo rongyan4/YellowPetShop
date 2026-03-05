@@ -138,12 +138,7 @@ const fetchDetail = async () => {
 
 // 获取默认头像
 const getDefaultAvatar = (petType) => {
-  if (petType === 'cat') {
-    return '/images/default_cat.png';
-  } else if (petType === 'dog') {
-    return '/images/default_dog.png';
-  }
-  return '/images/default_pet.png';
+  return '/images/default_avatar.png';
 };
 
 // 返回

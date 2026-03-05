@@ -85,10 +85,7 @@
 
       <!-- 体质特征 -->
       <div class="form-section">
-        <div class="section-title">
-          体质特征
-          <span class="section-subtitle">（选择后我们将为您推荐合适的商品）</span>
-        </div>
+        <div class="section-title">体质特征</div>
         
         <div class="health-options">
           <div 
@@ -103,7 +100,6 @@
             >
               {{ option.label }}
             </van-checkbox>
-            <div class="option-tip">推荐：{{ option.recommend }}</div>
           </div>
         </div>
       </div>
@@ -156,15 +152,13 @@
     </div>
 
     <!-- 选择器 -->
-    <van-action-sheet v-model:show="pickerVisible" title="请选择">
-      <div class="picker-wrapper">
-        <van-picker
-          :columns="currentPickerColumns"
-          @confirm="onPickerConfirm"
-          @cancel="pickerVisible = false"
-        />
-      </div>
-    </van-action-sheet>
+    <ActionSheet 
+      v-model:show="pickerVisible" 
+      :actions="currentPickerColumns"
+      cancel-text="取消"
+      close-on-click-action
+      @select="onPickerSelect"
+    />
   </div>
 </template>
 
@@ -172,7 +166,7 @@
 import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getPetProfileDetail, addPetProfile, updatePetProfile, uploadPetAvatar } from '@/api/petProfile';
-import { showToast, showConfirmDialog } from 'vant';
+import { showToast, showConfirmDialog,ActionSheet } from 'vant';
 
 const router = useRouter();
 const route = useRoute();
@@ -213,56 +207,56 @@ const formData = reactive({
 // 选择器选项配置
 const pickerOptions = {
   petType: [
-    { text: '狗', value: '狗' },
-    { text: '猫', value: '猫' },
-    { text: '兔子', value: '兔子' },
-    { text: '仓鼠', value: '仓鼠' },
-    { text: '龙猫', value: '龙猫' },
-    { text: '鸟类', value: '鸟类' },
-    { text: '其他', value: '其他' }
+    { name: '狗' },
+    { name: '猫' },
+    { name: '兔子' },
+    { name: '仓鼠' },
+    { name: '龙猫' },
+    { name: '鸟类' },
+    { name: '其他' }
   ],
   ageStage: [
-    { text: '幼年期（0-1岁）', value: '幼年期（0-1岁）' },
-    { text: '成年期（1-7岁）', value: '成年期（1-7岁）' },
-    { text: '老年期（7岁以上）', value: '老年期（7岁以上）' }
+    { name: '幼年期（0-1岁）' },
+    { name: '成年期（1-7岁）' },
+    { name: '老年期（7岁以上）' }
   ],
   bodySize: [
-    { text: '迷你型（<5kg）', value: '迷你型（<5kg）' },
-    { text: '小型（5-10kg）', value: '小型（5-10kg）' },
-    { text: '中型（10-25kg）', value: '中型（10-25kg）' },
-    { text: '大型（25-40kg）', value: '大型（25-40kg）' },
-    { text: '巨型（>40kg）', value: '巨型（>40kg）' }
+    { name: '迷你型（<5kg）' },
+    { name: '小型（5-10kg）' },
+    { name: '中型（10-25kg）' },
+    { name: '大型（25-40kg）' },
+    { name: '巨型（>40kg）' }
   ],
   gender: [
-    { text: '公', value: '公' },
-    { text: '母', value: '母' },
-    { text: '未知', value: '未知' }
+    { name: '公' },
+    { name: '母' },
+    { name: '未知' }
   ],
   activityLevel: [
-    { text: '低（很少运动）', value: '低（很少运动）' },
-    { text: '中（适量运动）', value: '中（适量运动）' },
-    { text: '高（经常运动）', value: '高（经常运动）' },
-    { text: '极高（运动员级别）', value: '极高（运动员级别）' }
+    { name: '低（很少运动）' },
+    { name: '中（适量运动）' },
+    { name: '高（经常运动）' },
+    { name: '极高（运动员级别）' }
   ],
   foodPreference: [
-    { text: '干粮为主', value: '干粮为主' },
-    { text: '湿粮为主', value: '湿粮为主' },
-    { text: '生骨肉', value: '生骨肉' },
-    { text: '自制鲜食', value: '自制鲜食' },
-    { text: '混合喂养', value: '混合喂养' }
+    { name: '干粮为主' },
+    { name: '湿粮为主' },
+    { name: '生骨肉' },
+    { name: '自制鲜食' },
+    { name: '混合喂养' }
   ]
 };
 
 // 体质特征选项
 const healthOptions = [
-  { key: 'isShedding', label: '易掉毛体质', recommend: '美毛粮、化毛膏、除毛梳' },
-  { key: 'isSkinSensitive', label: '皮肤敏感', recommend: '低敏粮、皮肤护理用品' },
-  { key: 'isStomachSensitive', label: '肠胃敏感', recommend: '益生菌、易消化粮' },
-  { key: 'hasDentalIssue', label: '口腔问题', recommend: '洁齿棒、口腔护理' },
-  { key: 'hasJointIssue', label: '关节问题', recommend: '关节保健品、软骨素' },
-  { key: 'hasTearStain', label: '泪痕问题', recommend: '去泪痕粮、眼部护理' },
-  { key: 'isOverweight', label: '肥胖倾向', recommend: '减肥粮、控制零食' },
-  { key: 'isPickyEater', label: '挑食', recommend: '适口性好的粮食、营养补充' }
+  { key: 'isShedding', label: '易掉毛体质' },
+  { key: 'isSkinSensitive', label: '皮肤敏感' },
+  { key: 'isStomachSensitive', label: '肠胃敏感' },
+  { key: 'hasDentalIssue', label: '口腔问题' },
+  { key: 'hasJointIssue', label: '关节问题' },
+  { key: 'hasTearStain', label: '泪痕问题' },
+  { key: 'isOverweight', label: '肥胖倾向' },
+  { key: 'isPickyEater', label: '挑食' }
 ];
 
 // 显示选择器
@@ -273,8 +267,8 @@ const showPicker = (type) => {
 };
 
 // 选择器确认
-const onPickerConfirm = ({ selectedOptions }) => {
-  formData[currentPickerType.value] = selectedOptions[0].value;
+const onPickerSelect = (item) => {
+  formData[currentPickerType.value] = item.name;
   pickerVisible.value = false;
 };
 
@@ -298,12 +292,7 @@ const fetchDetail = async () => {
 
 // 获取默认头像
 const getDefaultAvatar = (petType) => {
-  if (petType === 'cat') {
-    return '/images/default_cat.png';
-  } else if (petType === 'dog') {
-    return '/images/default_dog.png';
-  }
-  return '/images/default_pet.png';
+  return '/images/default_avatar.png';
 };
 
 // 切换体质特征
@@ -543,13 +532,6 @@ onMounted(() => {
   line-height: 1.5;
 }
 
-.option-tip {
-  font-size: 12px;
-  color: #999;
-  margin-top: 4px;
-  margin-left: 28px;
-}
-
 .bottom-btn {
   position: fixed;
   bottom: 0;
@@ -565,7 +547,5 @@ onMounted(() => {
   border: none;
 }
 
-.picker-wrapper {
-  padding: 20px 0;
-}
+
 </style>
