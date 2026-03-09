@@ -71,6 +71,11 @@
         <span class="menu-text">我的客服</span>
         <i class="arrow-right">›</i>
       </div>
+
+      <div class="menu-item" @click="handleMenuClick('ai-chat')">
+        <span class="menu-text">🤖 AI助手</span>
+        <i class="arrow-right">›</i>
+      </div>
     </div>
 
     <!-- 登录弹窗 -->
@@ -264,6 +269,9 @@ const handleMenuClick = (type) => {
     case 'service':
       // router.push('/service');
       console.log('跳转到我的客服');
+      break;
+    case 'ai-chat':
+      router.push('/ai-chat');
       break;
   }
 };

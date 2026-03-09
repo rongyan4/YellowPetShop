@@ -158,6 +158,13 @@ const routes = [
       import("../views/AddressEditView.vue"),
     meta: { requiresAuth: true }
   },
+  {
+    path: "/ai-chat",
+    name: "ai-chat",
+    component: () =>
+      import("../views/AiChatView.vue"),
+    meta: { requiresAuth: true }
+  },
   // ==================== 商家端路由 ====================
   {
     path: "/merchant/login",
