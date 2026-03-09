@@ -1,2 +1,4 @@
-package com.yellow.petshop.model.history;public class History {
+package com.yellow.petshop.model.history;
+
+public class History {
 }
