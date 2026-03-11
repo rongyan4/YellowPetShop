@@ -44,12 +44,12 @@ public class OrderTimeoutTask {
     @Transactional(rollbackFor = Exception.class)
     public void cancelTimeoutOrders() {
         try {
-            System.out.println("=== 开始检查超时订单 ===");
-            System.out.println("检查时间: " + LocalDateTime.now());
+//            System.out.println("=== 开始检查超时订单 ===");
+//            System.out.println("检查时间: " + LocalDateTime.now());
             
             // 计算超时时间点
             LocalDateTime timeoutTime = LocalDateTime.now().minusMinutes(TIMEOUT_MINUTES);
-            System.out.println("超时时间点: " + timeoutTime);
+//            System.out.println("超时时间点: " + timeoutTime);
             
             // 查询所有待支付且创建时间超过5分钟的订单
             QueryWrapper<Order> queryWrapper = new QueryWrapper<>();
@@ -59,11 +59,11 @@ public class OrderTimeoutTask {
             List<Order> timeoutOrders = orderMapper.selectList(queryWrapper);
             
             if (timeoutOrders.isEmpty()) {
-                System.out.println("没有超时订单");
+//                System.out.println("没有超时订单");
                 return;
             }
             
-            System.out.println("发现 " + timeoutOrders.size() + " 个超时订单");
+//            System.out.println("发现 " + timeoutOrders.size() + " 个超时订单");
             
             // 批量取消超时订单
             int cancelCount = 0;
@@ -75,7 +75,7 @@ public class OrderTimeoutTask {
                         // 恢复库存
                         int result = commodityMapper.increaseStock(item.getCommodityId(), item.getQuantity());
                         if (result > 0) {
-                            System.out.println("  - 恢复商品 " + item.getCommodityName() + " 库存 " + item.getQuantity());
+//                            System.out.println("  - 恢复商品 " + item.getCommodityName() + " 库存 " + item.getQuantity());
                         }
                     }
                     
@@ -91,11 +91,11 @@ public class OrderTimeoutTask {
                 }
             }
             
-            System.out.println("成功取消 " + cancelCount + " 个超时订单");
-            System.out.println("=== 超时订单检查完成 ===");
+//            System.out.println("成功取消 " + cancelCount + " 个超时订单");
+//            System.out.println("=== 超时订单检查完成 ===");
             
         } catch (Exception e) {
-            System.err.println("检查超时订单时发生异常: " + e.getMessage());
+//            System.err.println("检查超时订单时发生异常: " + e.getMessage());
             e.printStackTrace();
         }
     }

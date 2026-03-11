@@ -2,24 +2,34 @@ package com.yellow.petshop.util;
 
 import com.yellow.petshop.model.user.User;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.UUID;
 
+@Component
 public class JwtUtil {
+
+    private static String STATIC_SECRET;
+
     private long expirationTime = 1000 * 60 * 60 * 24 * 7;
+
     @Value("${jwt.secret}")
-    private String secret = "2F9s7k8d6j5g4h3f2d1s0a9s8d7f6g5h4j3k2l1m0n9b8v7c6x5z4a8s7d6f5g4h3j2=";
+    public void setSecret(String secret) {
+        JwtUtil.STATIC_SECRET = secret;
+    }
+
+    private SecretKey getKey() {
+        return Keys.hmacShaKeyFor(STATIC_SECRET.getBytes());
+    }
 
     //生成token（使用User对象 - 客户端）
     public String generateToken(User user) {
-        SecretKey key = Keys.hmacShaKeyFor(secret.getBytes());
         return Jwts.builder()
                 //Header
                 .setHeaderParam("typ","JWT")
@@ -31,14 +41,13 @@ public class JwtUtil {
                 .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
                 .setId(UUID.randomUUID().toString())
                 //Signature
-                .signWith(key, SignatureAlgorithm.HS256)
+                .signWith(getKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
-    
+
     //生成token（使用ID和用户名 - 商家端）
     public static String generateToken(Long userId, String username) {
-        JwtUtil jwtUtil = new JwtUtil();
-        SecretKey key = Keys.hmacShaKeyFor(jwtUtil.secret.getBytes());
+        SecretKey key = Keys.hmacShaKeyFor(STATIC_SECRET.getBytes());
         return Jwts.builder()
                 //Header
                 .setHeaderParam("typ","JWT")
@@ -47,7 +56,7 @@ public class JwtUtil {
                 .setSubject(userId.toString())
                 .claim("username", username)
                 .claim("userType", "merchant")  // 标识为商家端用户
-                .setExpiration(new Date(System.currentTimeMillis() + jwtUtil.expirationTime))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 24 * 7))
                 .setId(UUID.randomUUID().toString())
                 //Signature
                 .signWith(key, SignatureAlgorithm.HS256)
@@ -65,40 +74,50 @@ public class JwtUtil {
         Claims claims = extractClaims(token);
         return claims.get("username", String.class);
     }
-    
+
     //提取用户类型
     public String extractUserType(String token) {
         Claims claims = extractClaims(token);
         return claims.get("userType", String.class);
     }
-    
+
     // 静态方法：从Token中获取用户类型
     public static String getUserTypeFromToken(String token) {
         try {
-            JwtUtil jwtUtil = new JwtUtil();
-            return jwtUtil.extractUserType(token);
+            SecretKey key = Keys.hmacShaKeyFor(STATIC_SECRET.getBytes());
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return claims.get("userType", String.class);
         } catch (Exception e) {
             return null;
         }
     }
-    
+
     // 验证Token是否为商家端token
     public static boolean isMerchantToken(String token) {
         String userType = getUserTypeFromToken(token);
         return "merchant".equals(userType);
     }
-    
+
     // 验证Token是否为客户端token
     public static boolean isCustomerToken(String token) {
         String userType = getUserTypeFromToken(token);
         return "customer".equals(userType);
     }
-    
+
     // 静态方法：从Token中获取用户ID（用于Controller）
     public static Long getUserIdFromToken(String token) {
         try {
-            JwtUtil jwtUtil = new JwtUtil();
-            return jwtUtil.extractUserId(token);
+            SecretKey key = Keys.hmacShaKeyFor(STATIC_SECRET.getBytes());
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return Long.parseLong(claims.getSubject());
         } catch (Exception e) {
             return null;
         }
@@ -116,9 +135,8 @@ public class JwtUtil {
 
     // 提取Token负载
     private Claims extractClaims(String token) {
-        SecretKey key = Keys.hmacShaKeyFor(secret.getBytes());
         return Jwts.parserBuilder()
-                .setSigningKey(key)
+                .setSigningKey(getKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();

@@ -3,6 +3,8 @@ package com.yellow.petshop;
 import com.yellow.petshop.model.user.User;
 import io.jsonwebtoken.*;
 import org.junit.jupiter.api.Test;
+import org.springframework.aop.scope.ScopedProxyUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.Date;
