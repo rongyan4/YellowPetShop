@@ -32,12 +32,14 @@ export function getSessionHistory(sessionId) {
 
 /**
  * 发送消息（同步）
+ * AI 响应时间较长，单独设置 120s 超时，避免过早触发超时错误
  */
 export function sendMessage(data) {
   return request({
     url: '/chat/send',
     method: 'post',
-    params: data
+    params: data,
+    timeout: 120000
   });
 }
 

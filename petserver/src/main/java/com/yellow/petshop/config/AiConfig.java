@@ -10,11 +10,12 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class AiConfig {
+
     @Bean
-    public ChatClient chatClient(DeepSeekChatModel chatModel){
+    public ChatClient chatClient(DeepSeekChatModel chatModel, CommodityTools commodityTools){
         return ChatClient.builder(chatModel)
                 .defaultAdvisors(new SimpleLoggerAdvisor())//会话日志
-                .defaultTools(new CommodityTools())
+                .defaultTools(commodityTools)
                 .build();
     }
 }

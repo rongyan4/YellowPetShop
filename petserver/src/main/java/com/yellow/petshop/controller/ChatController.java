@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Flux;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -84,92 +83,53 @@ public class ChatController {
             @RequestHeader("Authorization") String authorization) {
         String token = authorization.replace("Bearer ", "");
         Long userId = JwtUtil.getUserIdFromToken(token);
-        
+
         // 验证会话是否属于该用户
         if (!chatSessionService.validateSession(sessionId, userId)) {
             return Result.error("无权访问该会话");
         }
-        
+
         List<ChatHistoryVO> history = chatHistoryService.getSessionHistory(sessionId);
         return Result.success(history);
     }
 
     /**
-     * 发送消息（同步）
+     * 发送消息
      */
     @PostMapping("/send")
     public Result<String> sendMessage(
             @RequestParam String message,
             @RequestParam String sessionId,
             @RequestHeader("Authorization") String authorization) {
-        
+
         String token = authorization.replace("Bearer ", "");
         Long userId = JwtUtil.getUserIdFromToken(token);
-        
+
         // 验证会话
         if (!chatSessionService.validateSession(sessionId, userId)) {
             return Result.error("无权访问该会话");
         }
-        
+
         // 保存用户消息
         chatHistoryService.saveMessage(sessionId, message, "user");
-        
-        // 调用AI生成回复（使用静态工厂方法）
+
+        // 调用AI生成回复
         String response = chatClient.prompt()
                 .system(system_prompt)
                 .user(message)
-                .advisors(MessageChatMemoryAdvisor.builder(databaseChatMemory)
-                        .conversationId(sessionId)
-                        .build())
+//                .advisors(MessageChatMemoryAdvisor.builder(databaseChatMemory)
+//                        .conversationId(sessionId)
+//                        .build())
                 .call()
                 .content();
-        
+
         // 保存AI回复
         chatHistoryService.saveMessage(sessionId, response, "assistant");
-        
+
         // 更新会话时间
         chatSessionService.updateSessionTime(sessionId);
-        
-        return Result.success(response);
-    }
 
-    /**
-     * 发送消息（流式）
-     */
-    @GetMapping(value = "/sendStream", produces = "text/event-stream;charset=UTF-8")
-    public Flux<String> sendMessageStream(
-            @RequestParam String message,
-            @RequestParam String sessionId,
-            @RequestHeader("Authorization") String authorization) {
-        
-        String token = authorization.replace("Bearer ", "");
-        Long userId = JwtUtil.getUserIdFromToken(token);
-        
-        // 验证会话
-        if (!chatSessionService.validateSession(sessionId, userId)) {
-            return Flux.just("error: 无权访问该会话");
-        }
-        
-        // 保存用户消息
-        chatHistoryService.saveMessage(sessionId, message, "user");
-        
-        // 流式响应（使用静态工厂方法）
-        Flux<String> responseFlux = chatClient.prompt()
-                .system(system_prompt)
-                .user(message)
-                .advisors(MessageChatMemoryAdvisor.builder(databaseChatMemory)
-                        .conversationId(sessionId)
-                        .build())
-                .stream()
-                .content();
-        
-        // 收集完整响应并保存
-        StringBuilder fullResponse = new StringBuilder();
-        return responseFlux.doOnNext(fullResponse::append)
-                .doOnComplete(() -> {
-                    chatHistoryService.saveMessage(sessionId, fullResponse.toString(), "assistant");
-                    chatSessionService.updateSessionTime(sessionId);
-                });
+        return Result.success(response);
     }
 
     /**
@@ -179,14 +139,14 @@ public class ChatController {
     public Result<String> clearHistory(
             @PathVariable String sessionId,
             @RequestHeader("Authorization") String authorization) {
-        
+
         String token = authorization.replace("Bearer ", "");
         Long userId = JwtUtil.getUserIdFromToken(token);
-        
+
         if (!chatSessionService.validateSession(sessionId, userId)) {
             return Result.error("无权访问该会话");
         }
-        
+
         chatHistoryService.clearSessionHistory(sessionId);
         return Result.success("清空成功");
     }
