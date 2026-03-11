@@ -28,4 +28,14 @@ public interface AddressService {
      * 设置默认地址
      */
     Boolean setDefaultAddress(Long userId, Long addressId);
+    
+    /**
+     * 更新地址
+     */
+    Boolean updateAddress(UserAddress address);
+    
+    /**
+     * 删除地址
+     */
+    Boolean deleteAddress(Long userId, Long addressId);
 }

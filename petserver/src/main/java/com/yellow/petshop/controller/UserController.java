@@ -85,6 +85,21 @@ public class UserController {
     }
 
     /**
+     * 获取用户信息
+     * @param id - 用户ID
+     * @returns {Promise}
+     */
+    @GetMapping("/{id}")
+    public Result<UserInfo> getUserInfo(@PathVariable Long id) {
+        try {
+            UserInfo userInfo = userService.getInfo(id);
+            return Result.success(userInfo);
+        } catch (Exception e) {
+            return Result.error("获取用户信息失败");
+        }
+    }
+
+    /**
      * 获取当前登录用户信息
      * 访问路径: GET /api/user/info
      * 需要JWT认证

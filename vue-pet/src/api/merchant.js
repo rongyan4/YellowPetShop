@@ -304,3 +304,65 @@ export function getMemberOrders(userId, params) {
     params
   });
 }
+
+/**
+ * 标记订单为已完成
+ */
+export function completeOrder(orderId) {
+  return request({
+    url: `/merchant/orders/${orderId}/complete`,
+    method: 'post'
+  });
+}
+
+/**
+ * 添加物流信息
+ */
+export function addLogistics(data) {
+  return request({
+    url: '/logistics/add',
+    method: 'post',
+    data
+  });
+}
+
+/**
+ * 更新物流信息
+ */
+export function updateLogistics(logisticsId, data) {
+  return request({
+    url: `/logistics/update/${logisticsId}`,
+    method: 'put',
+    data
+  });
+}
+
+/**
+ * 获取订单的物流信息列表
+ */
+export function getOrderLogistics(orderId) {
+  return request({
+    url: `/logistics/order/${orderId}`,
+    method: 'get'
+  });
+}
+
+/**
+ * 获取物流详情
+ */
+export function getLogisticsDetail(logisticsId) {
+  return request({
+    url: `/logistics/detail/${logisticsId}`,
+    method: 'get'
+  });
+}
+
+/**
+ * 删除物流信息
+ */
+export function deleteLogistics(logisticsId) {
+  return request({
+    url: `/logistics/delete/${logisticsId}`,
+    method: 'delete'
+  });
+}

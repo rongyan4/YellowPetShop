@@ -16,7 +16,7 @@
       <div class="info-card">
         <div class="card-header">
           <h2>基本信息</h2>
-          <button @click="showEditDialog = true" class="edit-btn">
+          <button @click="openEditDialog" class="edit-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -24,11 +24,16 @@
             编辑
           </button>
         </div>
-        <div class="info-grid">
-          <div class="info-item">
-            <label>用户ID</label>
-            <span>{{ memberInfo.id }}</span>
+        <div class="user-profile">
+          <div class="avatar-section">
+            <img :src="memberInfo.avatar || defaultAvatar" alt="用户头像" class="user-avatar" />
+            <div class="avatar-info">
+              <h3>{{ memberInfo.nickname || memberInfo.username }}</h3>
+              <p class="user-id">ID: {{ memberInfo.id }}</p>
+            </div>
           </div>
+        </div>
+        <div class="info-grid">
           <div class="info-item">
             <label>用户名</label>
             <span>{{ memberInfo.username }}</span>
@@ -75,20 +80,55 @@
               <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
               <line x1="1" y1="10" x2="23" y2="10"></line>
             </svg>
-            管理
+            调整余额
           </button>
         </div>
         <div class="wallet-info">
           <div class="wallet-item">
             <div class="wallet-label">账户余额</div>
-            <div class="wallet-value balance">¥{{ walletInfo.balance || '0.00' }}</div>
+            <div class="wallet-value balance">¥{{ (memberInfo.balance || 0).toFixed(2) }}</div>
           </div>
           <div class="wallet-item">
             <div class="wallet-label">支付密码</div>
             <div class="wallet-value">
-              {{ walletInfo.hasPayPassword ? '已设置' : '未设置' }}
+              {{ memberInfo.hasPayPassword ? '已设置' : '未设置' }}
               <button @click="showResetPasswordDialog = true" class="reset-btn">重置</button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 收货地址卡片 -->
+      <div class="info-card">
+        <div class="card-header">
+          <h2>收货地址</h2>
+          <button @click="showAddAddressDialog" class="edit-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            添加地址
+          </button>
+        </div>
+        <div class="address-list">
+          <div v-for="address in addressList" :key="address.id" class="address-item">
+            <div class="address-content">
+              <div class="address-header">
+                <span class="receiver">{{ address.receiverName }}</span>
+                <span class="phone">{{ address.receiverPhone }}</span>
+                <span v-if="address.isDefault" class="default-badge">默认</span>
+              </div>
+              <div class="address-detail">
+                {{ address.province }} {{ address.city }} {{ address.district }} {{ address.detailAddress }}
+              </div>
+            </div>
+            <div class="address-actions">
+              <button @click="editAddress(address)" class="btn-edit">编辑</button>
+              <button @click="deleteAddress(address.id)" class="btn-delete">删除</button>
+            </div>
+          </div>
+          <div v-if="addressList.length === 0" class="empty-state">
+            <p>暂无收货地址</p>
           </div>
         </div>
       </div>
@@ -104,7 +144,7 @@
             <div class="stat-label">总订单数</div>
           </div>
           <div class="stat-item">
-            <div class="stat-value">¥{{ orderStats.totalAmount || '0.00' }}</div>
+            <div class="stat-value">¥{{ (orderStats.totalAmount || 0).toFixed(2) }}</div>
             <div class="stat-label">总消费金额</div>
           </div>
           <div class="stat-item">
@@ -121,7 +161,7 @@
       <!-- 订单列表 -->
       <div class="info-card">
         <div class="card-header">
-          <h2>订单列表</h2>
+          <h2>最近订单</h2>
         </div>
         <div class="order-list">
           <table class="order-table">
@@ -189,9 +229,9 @@
           <div class="form-group">
             <label>性别</label>
             <select v-model="editForm.gender" class="form-select">
-              <option :value="0">未知</option>
-              <option :value="1">男</option>
-              <option :value="2">女</option>
+              <option value="0">未知</option>
+              <option value="1">男</option>
+              <option value="2">女</option>
             </select>
           </div>
           <div class="form-group">
@@ -206,6 +246,52 @@
       </div>
     </van-popup>
 
+    <!-- 添加/编辑地址对话框 -->
+    <van-popup v-model:show="showAddressDialog" position="center" :style="{ width: '90%', maxWidth: '500px', borderRadius: '16px' }">
+      <div class="dialog">
+        <div class="dialog-header">
+          <h3>{{ addressForm.id ? '编辑地址' : '添加地址' }}</h3>
+          <button @click="showAddressDialog = false" class="close-btn">×</button>
+        </div>
+        <div class="dialog-body">
+          <div class="form-group">
+            <label>收货人</label>
+            <input v-model="addressForm.receiverName" type="text" placeholder="请输入收货人姓名" />
+          </div>
+          <div class="form-group">
+            <label>联系电话</label>
+            <input v-model="addressForm.receiverPhone" type="tel" placeholder="请输入联系电话" />
+          </div>
+          <div class="form-group">
+            <label>省份</label>
+            <input v-model="addressForm.province" type="text" placeholder="请输入省份" />
+          </div>
+          <div class="form-group">
+            <label>城市</label>
+            <input v-model="addressForm.city" type="text" placeholder="请输入城市" />
+          </div>
+          <div class="form-group">
+            <label>区/县</label>
+            <input v-model="addressForm.district" type="text" placeholder="请输入区/县" />
+          </div>
+          <div class="form-group">
+            <label>详细地址</label>
+            <textarea v-model="addressForm.detailAddress" placeholder="请输入详细地址" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input v-model="addressForm.isDefault" type="checkbox" />
+              设为默认地址
+            </label>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button @click="showAddressDialog = false" class="btn-cancel">取消</button>
+          <button @click="handleSaveAddress" class="btn-confirm">保存</button>
+        </div>
+      </div>
+    </van-popup>
+
     <!-- 钱包管理对话框 -->
     <van-popup v-model:show="showWalletDialog" position="center" :style="{ width: '90%', maxWidth: '500px', borderRadius: '16px' }">
       <div class="dialog">
@@ -216,7 +302,7 @@
         <div class="dialog-body">
           <div class="form-group">
             <label>当前余额</label>
-            <div class="balance-display">¥{{ walletInfo.balance || '0.00' }}</div>
+            <div class="balance-display">¥{{ memberInfo ? (memberInfo.balance || 0).toFixed(2) : '0.00' }}</div>
           </div>
           <div class="form-group">
             <label>调整金额</label>
@@ -268,19 +354,26 @@ import {
   updateMemberInfo, 
   adjustMemberBalance, 
   resetMemberPayPassword,
-  getMemberOrders 
+  getMemberOrders,
+  getMemberAddressList,
+  addMemberAddress,
+  updateMemberAddress,
+  deleteMemberAddress
 } from '@/api/merchantMember';
-import { showSuccessToast, showFailToast } from 'vant';
+import { showSuccessToast, showFailToast, showConfirmDialog } from 'vant';
 
 const router = useRouter();
 const route = useRoute();
 
+const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png';
+
 const memberInfo = ref(null);
-const walletInfo = ref({});
+const addressList = ref([]);
 const orderStats = ref({});
 const orderList = ref([]);
 
 const showEditDialog = ref(false);
+const showAddressDialog = ref(false);
 const showWalletDialog = ref(false);
 const showResetPasswordDialog = ref(false);
 
@@ -288,8 +381,19 @@ const editForm = ref({
   nickname: '',
   email: '',
   phone: '',
-  gender: 0,
+  gender: '0',
   birthday: ''
+});
+
+const addressForm = ref({
+  id: null,
+  receiverName: '',
+  receiverPhone: '',
+  province: '',
+  city: '',
+  district: '',
+  detailAddress: '',
+  isDefault: false
 });
 
 const walletForm = ref({
@@ -314,16 +418,14 @@ const loadMemberDetail = async () => {
   try {
     const response = await getMemberDetail(userId);
     if (response && response.code === 200) {
-      memberInfo.value = response.data.memberInfo;
-      walletInfo.value = response.data.walletInfo || {};
-      orderStats.value = response.data.orderStats || {};
+      memberInfo.value = response.data;
       
       // 初始化编辑表单
       editForm.value = {
         nickname: memberInfo.value.nickname || '',
         email: memberInfo.value.email || '',
         phone: memberInfo.value.phone || '',
-        gender: memberInfo.value.gender || 0,
+        gender: memberInfo.value.gender || '0',
         birthday: memberInfo.value.birthday || ''
       };
     } else {
@@ -335,6 +437,19 @@ const loadMemberDetail = async () => {
   }
 };
 
+// 加载会员地址
+const loadMemberAddresses = async () => {
+  const userId = route.params.id;
+  try {
+    const response = await getMemberAddressList(userId);
+    if (response && response.code === 200) {
+      addressList.value = response.data || [];
+    }
+  } catch (error) {
+    console.error('加载地址列表失败:', error);
+  }
+};
+
 // 加载会员订单
 const loadMemberOrders = async () => {
   const userId = route.params.id;
@@ -342,10 +457,54 @@ const loadMemberOrders = async () => {
     const response = await getMemberOrders(userId, { page: 1, pageSize: 10 });
     if (response && response.code === 200) {
       orderList.value = response.data.list || [];
+      calculateOrderStats();
     }
   } catch (error) {
     console.error('加载订单列表失败:', error);
   }
+};
+
+// 计算订单统计
+const calculateOrderStats = () => {
+  if (!orderList.value || orderList.value.length === 0) {
+    orderStats.value = {
+      totalOrders: 0,
+      totalAmount: 0,
+      pendingOrders: 0,
+      completedOrders: 0
+    };
+    return;
+  }
+
+  const stats = {
+    totalOrders: orderList.value.length,
+    totalAmount: 0,
+    pendingOrders: 0,
+    completedOrders: 0
+  };
+
+  orderList.value.forEach(order => {
+    stats.totalAmount += parseFloat(order.payAmount || 0);
+    if (order.status === 'PENDING') {
+      stats.pendingOrders++;
+    } else if (order.status === 'COMPLETED') {
+      stats.completedOrders++;
+    }
+  });
+
+  orderStats.value = stats;
+};
+
+// 打开编辑对话框
+const openEditDialog = () => {
+  editForm.value = {
+    nickname: memberInfo.value.nickname || '',
+    email: memberInfo.value.email || '',
+    phone: memberInfo.value.phone || '',
+    gender: memberInfo.value.gender || '0',
+    birthday: memberInfo.value.birthday || ''
+  };
+  showEditDialog.value = true;
 };
 
 // 更新基本信息
@@ -362,6 +521,102 @@ const handleUpdateInfo = async () => {
     }
   } catch (error) {
     showFailToast('更新失败');
+  }
+};
+
+// 显示添加地址对话框
+const showAddAddressDialog = () => {
+  addressForm.value = {
+    id: null,
+    receiverName: '',
+    receiverPhone: '',
+    province: '',
+    city: '',
+    district: '',
+    detailAddress: '',
+    isDefault: false
+  };
+  showAddressDialog.value = true;
+};
+
+// 编辑地址
+const editAddress = (address) => {
+  addressForm.value = {
+    id: address.id,
+    receiverName: address.receiverName,
+    receiverPhone: address.receiverPhone,
+    province: address.province,
+    city: address.city,
+    district: address.district,
+    detailAddress: address.detailAddress,
+    isDefault: address.isDefault || false
+  };
+  showAddressDialog.value = true;
+};
+
+// 保存地址
+const handleSaveAddress = async () => {
+  // 验证表单
+  if (!addressForm.value.receiverName) {
+    showFailToast('请输入收货人姓名');
+    return;
+  }
+  if (!addressForm.value.receiverPhone) {
+    showFailToast('请输入联系电话');
+    return;
+  }
+  if (!addressForm.value.province || !addressForm.value.city || !addressForm.value.district) {
+    showFailToast('请完整填写省市区信息');
+    return;
+  }
+  if (!addressForm.value.detailAddress) {
+    showFailToast('请输入详细地址');
+    return;
+  }
+
+  const userId = route.params.id;
+  try {
+    let response;
+    if (addressForm.value.id) {
+      // 更新地址
+      response = await updateMemberAddress(addressForm.value.id, addressForm.value);
+    } else {
+      // 添加地址
+      response = await addMemberAddress(userId, addressForm.value);
+    }
+    
+    if (response && response.code === 200) {
+      showSuccessToast(addressForm.value.id ? '更新成功' : '添加成功');
+      showAddressDialog.value = false;
+      loadMemberAddresses();
+    } else {
+      showFailToast(response.msg || '操作失败');
+    }
+  } catch (error) {
+    showFailToast('操作失败');
+  }
+};
+
+// 删除地址
+const deleteAddress = async (addressId) => {
+  try {
+    await showConfirmDialog({
+      title: '确认删除',
+      message: '确定要删除这个地址吗？'
+    });
+    
+    const response = await deleteMemberAddress(addressId);
+    if (response && response.code === 200) {
+      showSuccessToast('删除成功');
+      loadMemberAddresses();
+    } else {
+      showFailToast(response.msg || '删除失败');
+    }
+  } catch (error) {
+    // 用户取消删除
+    if (error !== 'cancel') {
+      showFailToast('删除失败');
+    }
   }
 };
 
@@ -392,6 +647,11 @@ const handleAdjustBalance = async () => {
 const handleResetPayPassword = async () => {
   if (!passwordForm.value.newPassword || passwordForm.value.newPassword.length !== 6) {
     showFailToast('请输入6位数字密码');
+    return;
+  }
+  
+  if (!/^\d{6}$/.test(passwordForm.value.newPassword)) {
+    showFailToast('密码必须是6位数字');
     return;
   }
   
@@ -454,6 +714,7 @@ const getOrderStatusClass = (status) => {
 
 onMounted(() => {
   loadMemberDetail();
+  loadMemberAddresses();
   loadMemberOrders();
 });
 </script>
@@ -462,6 +723,7 @@ onMounted(() => {
 .member-detail {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 20px;
 }
 
 .header {
@@ -556,6 +818,41 @@ onMounted(() => {
   stroke-width: 2;
 }
 
+.user-profile {
+  margin-bottom: 24px;
+}
+
+.avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 12px;
+}
+
+.user-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-info h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #2d3436;
+  margin: 0 0 8px 0;
+}
+
+.user-id {
+  font-size: 14px;
+  color: #636e72;
+  margin: 0;
+}
+
 .info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -624,9 +921,12 @@ onMounted(() => {
 }
 
 .wallet-value.balance {
-  font-size: 28px;
-  font-weight: 600;
-  color: #98D8C8;
+  font-size: 32px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #98D8C8 0%, #6BCF9F 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .reset-btn {
@@ -644,6 +944,98 @@ onMounted(() => {
   background: #ffeaa7;
 }
 
+.address-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.address-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  transition: all 0.2s;
+}
+
+.address-item:hover {
+  border-color: #98D8C8;
+  box-shadow: 0 2px 8px rgba(152, 216, 200, 0.2);
+}
+
+.address-content {
+  flex: 1;
+}
+
+.address-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.receiver {
+  font-size: 15px;
+  font-weight: 600;
+  color: #2d3436;
+}
+
+.phone {
+  font-size: 14px;
+  color: #636e72;
+}
+
+.default-badge {
+  padding: 2px 8px;
+  background: #98D8C8;
+  color: white;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.address-detail {
+  font-size: 14px;
+  color: #636e72;
+  line-height: 1.6;
+}
+
+.address-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-edit,
+.btn-delete {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-edit {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.btn-edit:hover {
+  background: #bbdefb;
+}
+
+.btn-delete {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.btn-delete:hover {
+  background: #ffcdd2;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -652,21 +1044,31 @@ onMounted(() => {
 
 .stat-item {
   text-align: center;
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  padding: 24px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.stat-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 }
 
 .stat-value {
-  font-size: 24px;
-  font-weight: 600;
-  color: #98D8C8;
+  font-size: 28px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #98D8C8 0%, #6BCF9F 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin-bottom: 8px;
 }
 
 .stat-label {
   font-size: 13px;
   color: #636e72;
+  font-weight: 500;
 }
 
 .order-table {
@@ -792,6 +1194,10 @@ onMounted(() => {
   color: #636e72;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .close-btn:hover {
@@ -800,6 +1206,8 @@ onMounted(() => {
 
 .dialog-body {
   margin-bottom: 24px;
+  max-height: 60vh;
+  overflow-y: auto;
 }
 
 .form-group {
@@ -814,6 +1222,18 @@ onMounted(() => {
   margin-bottom: 8px;
 }
 
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+  cursor: pointer;
+}
+
 .form-group input,
 .form-group textarea,
 .form-select {
@@ -824,6 +1244,7 @@ onMounted(() => {
   font-size: 14px;
   outline: none;
   transition: all 0.2s;
+  box-sizing: border-box;
 }
 
 .form-group input:focus,

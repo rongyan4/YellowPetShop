@@ -133,4 +133,71 @@ public class AddressController {
             return Result.error(e.getMessage());
         }
     }
+    
+    /**
+     * 更新地址
+     */
+    @PutMapping("/update/{addressId}")
+    public Result<String> updateAddress(
+            @PathVariable Long addressId,
+            @RequestBody UserAddress address,
+            HttpServletRequest request) {
+        
+        String token = request.getHeader("Authorization");
+        if (token == null || !token.startsWith("Bearer ")) {
+            return Result.error("未登录");
+        }
+        
+        token = token.substring(7);
+        Long userId = JwtUtil.getUserIdFromToken(token);
+        
+        if (userId == null) {
+            return Result.error("token无效");
+        }
+        
+        try {
+            address.setId(addressId);
+            address.setUserId(userId);
+            Boolean success = addressService.updateAddress(address);
+            if (success) {
+                return Result.success("更新成功");
+            } else {
+                return Result.error("更新失败");
+            }
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 删除地址
+     */
+    @DeleteMapping("/delete/{addressId}")
+    public Result<String> deleteAddress(
+            @PathVariable Long addressId,
+            HttpServletRequest request) {
+        
+        String token = request.getHeader("Authorization");
+        if (token == null || !token.startsWith("Bearer ")) {
+            return Result.error("未登录");
+        }
+        
+        token = token.substring(7);
+        Long userId = JwtUtil.getUserIdFromToken(token);
+        
+        if (userId == null) {
+            return Result.error("token无效");
+        }
+        
+        try {
+            Boolean success = addressService.deleteAddress(userId, addressId);
+            if (success) {
+                return Result.success("删除成功");
+            } else {
+                return Result.error("删除失败");
+            }
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
 }

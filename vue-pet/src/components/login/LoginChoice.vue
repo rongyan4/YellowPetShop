@@ -17,14 +17,10 @@
       <!-- Logo图标 -->
       <div class="logo-container">
         <div class="logo-icon">
-          <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-            <circle cx="40" cy="40" r="6" fill="white"/>
-            <circle cx="40" cy="20" r="6" fill="white"/>
-            <circle cx="40" cy="60" r="6" fill="white"/>
-            <circle cx="57.32" cy="30" r="6" fill="white"/>
-            <circle cx="22.68" cy="50" r="6" fill="white"/>
-            <circle cx="57.32" cy="50" r="6" fill="white"/>
-            <circle cx="22.68" cy="30" r="6" fill="white"/>
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
+            <!-- 标签图标 -->
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,255,255,0.3)"/>
+            <line x1="7" y1="7" x2="7.01" y2="7" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
           </svg>
         </div>
       </div>
@@ -181,12 +177,12 @@ const closeRegister = () => {
 .logo-icon {
   width: 1.8rem;
   height: 1.8rem;
-  background: linear-gradient(135deg, #8bc34a 0%, #7cb342 100%);
-  border-radius: 50%;
+  background: linear-gradient(135deg, #FFE033 0%, #FFD700 100%);
+  border-radius: 0.32rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0.12rem 0.36rem rgba(124, 179, 66, 0.25);
+  box-shadow: 0 0.12rem 0.36rem rgba(255, 215, 0, 0.4);
   
   svg {
     width: 1.2rem;
@@ -217,20 +213,20 @@ const closeRegister = () => {
   width: 80%;
   margin: 0 auto;
   height: 0.9rem;
-  background: linear-gradient(135deg, #8bc34a 0%, #7cb342 100%);
+  background: linear-gradient(135deg, #FFE033 0%, #FFD700 100%);
   border: none;
   border-radius: 0.45rem;
-  color: #ffffff;
+  color: #333333;
   font-size: 0.32rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 0.06rem 0.18rem rgba(124, 179, 66, 0.3);
+  box-shadow: 0 0.06rem 0.18rem rgba(255, 215, 0, 0.4);
   flex-shrink: 0;
   
   &:active {
     transform: scale(0.98);
-    box-shadow: 0 0.03rem 0.12rem rgba(124, 179, 66, 0.3);
+    box-shadow: 0 0.03rem 0.12rem rgba(255, 215, 0, 0.4);
   }
 }
 
@@ -271,8 +267,8 @@ const closeRegister = () => {
   transition: all 0.2s ease;
   
   &.checked {
-    background: #7cb342;
-    border-color: #7cb342;
+    background: #FFD700;
+    border-color: #FFD700;
   }
   
   &:active {

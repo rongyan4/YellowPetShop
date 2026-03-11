@@ -61,19 +61,19 @@ public class MerchantOrderServiceImpl implements MerchantOrderService {
         dashboard.setTodayOrderCount(todayOrders.size());
         
         BigDecimal todaySales = todayOrders.stream()
-                .filter(o -> "paid".equals(o.getStatus()) || "shipped".equals(o.getStatus()) || "completed".equals(o.getStatus()))
+                .filter(o -> "PAID".equals(o.getStatus()) || "SHIPPED".equals(o.getStatus()) || "COMPLETED".equals(o.getStatus()))
                 .map(Order::getPayAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         dashboard.setTodaySales(todaySales);
         
         // 待处理订单数（待支付）
         QueryWrapper<Order> pendingWrapper = new QueryWrapper<>();
-        pendingWrapper.eq("status", "pending");
+        pendingWrapper.eq("status", "PENDING");
         dashboard.setPendingOrderCount(Math.toIntExact(orderMapper.selectCount(pendingWrapper)));
         
         // 待发货订单数
         QueryWrapper<Order> toShipWrapper = new QueryWrapper<>();
-        toShipWrapper.eq("status", "paid");
+        toShipWrapper.eq("status", "PAID");
         dashboard.setToShipOrderCount(Math.toIntExact(orderMapper.selectCount(toShipWrapper)));
         
         // 商品统计
@@ -93,14 +93,14 @@ public class MerchantOrderServiceImpl implements MerchantOrderService {
         dashboard.setTotalOrderCount(allOrders.size());
         
         BigDecimal totalSales = allOrders.stream()
-                .filter(o -> "paid".equals(o.getStatus()) || "shipped".equals(o.getStatus()) || "completed".equals(o.getStatus()))
+                .filter(o -> "PAID".equals(o.getStatus()) || "SHIPPED".equals(o.getStatus()) || "COMPLETED".equals(o.getStatus()))
                 .map(Order::getPayAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         dashboard.setTotalSales(totalSales);
         
         // 待评价订单数
         QueryWrapper<Order> toCommentWrapper = new QueryWrapper<>();
-        toCommentWrapper.eq("status", "completed");
+        toCommentWrapper.eq("status", "COMPLETED");
         dashboard.setToCommentOrderCount(Math.toIntExact(orderMapper.selectCount(toCommentWrapper)));
         
         // 评论统计
@@ -205,7 +205,7 @@ public class MerchantOrderServiceImpl implements MerchantOrderService {
             throw new RuntimeException("订单不存在");
         }
         
-        if (!"pending".equals(order.getStatus())) {
+        if (!"PENDING".equals(order.getStatus())) {
             throw new RuntimeException("只能修改待支付订单的价格");
         }
         
@@ -238,13 +238,13 @@ public class MerchantOrderServiceImpl implements MerchantOrderService {
             throw new RuntimeException("订单不存在");
         }
         
-        if (!"paid".equals(order.getStatus())) {
+        if (!"PAID".equals(order.getStatus())) {
             throw new RuntimeException("只能对已付款订单进行发货");
         }
         
         // 更新订单状态
-        order.setStatus("shipped");
-        order.setShippingStatus("shipped");
+        order.setStatus("SHIPPED");
+        order.setShippingStatus("SHIPPED");
         order.setShippingCompany(dto.getShippingCompany());
         order.setTrackingNo(dto.getTrackingNo());
         order.setShippingTime(LocalDateTime.now());
@@ -272,5 +272,26 @@ public class MerchantOrderServiceImpl implements MerchantOrderService {
                 commodityMapper.updateById(commodity);
             }
         }
+    }
+    
+    @Override
+    @Transactional
+    public void completeOrder(Long orderId) {
+        Order order = orderMapper.selectById(orderId);
+        if (order == null) {
+            throw new RuntimeException("订单不存在");
+        }
+        
+        if (!"SHIPPED".equals(order.getStatus())) {
+            throw new RuntimeException("只能对已发货订单标记为已完成");
+        }
+        
+        // 更新订单状态
+        order.setStatus("COMPLETED");
+        order.setShippingStatus("DELIVERED");
+        order.setCompleteTime(LocalDateTime.now());
+        order.setUpdateTime(LocalDateTime.now());
+        
+        orderMapper.updateById(order);
     }
 }

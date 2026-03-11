@@ -40,8 +40,9 @@
               block 
               type="primary" 
               native-type="submit"
-              color="#2c3e50"
+              color="#FFD700"
               size="large"
+              style="color: #333; font-weight: 600;"
             >
               确定
             </van-button>

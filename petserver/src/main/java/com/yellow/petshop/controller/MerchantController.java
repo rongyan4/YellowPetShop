@@ -154,6 +154,19 @@ public class MerchantController {
     }
     
     /**
+     * 标记订单为已完成
+     */
+    @PostMapping("/orders/{orderId}/complete")
+    public Result<String> completeOrder(@PathVariable Long orderId) {
+        try {
+            merchantOrderService.completeOrder(orderId);
+            return Result.success("订单已完成");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
      * 更新商品上下架状态
      */
     @PostMapping("/products/{productId}/status")

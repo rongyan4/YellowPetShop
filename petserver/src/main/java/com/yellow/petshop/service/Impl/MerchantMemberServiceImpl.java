@@ -83,46 +83,31 @@ public class MerchantMemberServiceImpl implements MerchantMemberService {
         walletWrapper.eq("user_id", userId);
         UserWallet wallet = walletMapper.selectOne(walletWrapper);
         
-        Map<String, Object> walletInfo = new HashMap<>();
+        // 将用户信息和钱包信息合并
+        Map<String, Object> memberData = new HashMap<>();
+        memberData.put("id", user.getId());
+        memberData.put("username", user.getUsername());
+        memberData.put("email", user.getEmail());
+        memberData.put("nickname", user.getNickname());
+        memberData.put("gender", user.getGender());
+        memberData.put("avatar", user.getAvatar());
+        memberData.put("status", user.getStatus());
+        memberData.put("role", user.getRole());
+        memberData.put("birthday", user.getBirthday());
+        memberData.put("phone", user.getPhone());
+        memberData.put("points", user.getPoints());
+        memberData.put("createTime", user.getCreateTime());
+        
+        // 添加钱包信息到用户数据中
         if (wallet != null) {
-            walletInfo.put("balance", wallet.getBalance());
-            walletInfo.put("hasPayPassword", wallet.getPayPassword() != null && !wallet.getPayPassword().isEmpty());
+            memberData.put("balance", wallet.getBalance());
+            memberData.put("hasPayPassword", wallet.getPayPassword() != null && !wallet.getPayPassword().isEmpty());
         } else {
-            walletInfo.put("balance", "0.00");
-            walletInfo.put("hasPayPassword", false);
+            memberData.put("balance", BigDecimal.ZERO);
+            memberData.put("hasPayPassword", false);
         }
         
-        // 获取订单统计
-        QueryWrapper<Order> orderWrapper = new QueryWrapper<>();
-        orderWrapper.eq("user_id", userId);
-        List<Order> orders = orderMapper.selectList(orderWrapper);
-        
-        Map<String, Object> orderStats = new HashMap<>();
-        orderStats.put("totalOrders", orders.size());
-        
-        BigDecimal totalAmount = orders.stream()
-                .filter(o -> !"CANCELLED".equals(o.getStatus()))
-                .map(Order::getPayAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        orderStats.put("totalAmount", totalAmount);
-        
-        long pendingOrders = orders.stream()
-                .filter(o -> "PENDING".equals(o.getStatus()))
-                .count();
-        orderStats.put("pendingOrders", pendingOrders);
-        
-        long completedOrders = orders.stream()
-                .filter(o -> "COMPLETED".equals(o.getStatus()))
-                .count();
-        orderStats.put("completedOrders", completedOrders);
-        
-        // 组装返回数据
-        Map<String, Object> result = new HashMap<>();
-        result.put("memberInfo", user);
-        result.put("walletInfo", walletInfo);
-        result.put("orderStats", orderStats);
-        
-        return result;
+        return memberData;
     }
     
     @Override

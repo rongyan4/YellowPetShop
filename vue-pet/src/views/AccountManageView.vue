@@ -247,18 +247,19 @@ const confirmLogout = () => {
 .logout-btn {
   width: 100%;
   height: 50px;
-  background-color: #000;
-  color: #fff;
+  background: linear-gradient(135deg, #FFE033 0%, #FFD700 100%);
+  color: #333;
   border: none;
   border-radius: 8px;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
 }
 
 .logout-btn:hover {
-  background-color: #333;
+  background: linear-gradient(135deg, #FFD700 0%, #FFC200 100%);
 }
 
 .logout-btn:active {
@@ -343,12 +344,13 @@ const confirmLogout = () => {
 }
 
 .confirm-btn {
-  background-color: #000;
-  color: #fff;
+  background: linear-gradient(135deg, #FFE033 0%, #FFD700 100%);
+  color: #333;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
 }
 
 .confirm-btn:hover {
-  background-color: #333;
+  background: linear-gradient(135deg, #FFD700 0%, #FFC200 100%);
 }
 
 .modal-btn:active {

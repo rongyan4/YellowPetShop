@@ -44,19 +44,6 @@ public class WebConfig implements WebMvcConfigurer {
         // ========== 客户端拦截器 ==========
         // 只放行显示声明的接口，验证客户端token
         registry.addInterceptor(customerJwtInterceptor)
-//                .addPathPatterns(
-//                        "/api/user/info",                // 获取用户信息
-//                        "/api/user/update_info",         // 更新用户信息
-//                        "/api/user/upload_avatar",       // 上传头像
-//                        "/api/address/**",               // 地址管理
-//                        "/api/cart/**",                  // 购物车
-//                        "/api/order/**",                 // 订单管理
-//                        "/api/favorite/**",              // 收藏
-//                        "/api/comment/**",               // 评论
-//                        "/api/browse/**",                // 浏览历史
-//                        "/api/pet/**",                   // 宠物档案
-//                        "/api/payment/**"                // 支付相关
-//                )
                 .addPathPatterns("/api/**")
                 .excludePathPatterns(
                         "/api/merchant/**",              //商家接口
@@ -64,7 +51,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/user/register",             // 客户注册接口
                         "/api/goods/**",                    //(商品浏览)
                         "/api/category/**",               //(分类浏览)
-                        "/api/swipe/**",                  //(轮播图)
+                        "/api/home/swipe/**",                  //(轮播图)
                         "/api/recommend/**",              //(推荐)
                         "/api/search/**",                  //(搜索)
                         "/api/images/**"                   //静态资源

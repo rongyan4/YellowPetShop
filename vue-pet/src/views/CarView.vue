@@ -468,8 +468,8 @@ onMounted(() => {
 }
 
 .checkbox-inner.checked {
-  background-color: #7cb342;
-  border-color: #7cb342;
+  background-color: #FFD700;
+  border-color: #FFD700;
 }
 
 /* 商品图片 */
@@ -623,20 +623,20 @@ onMounted(() => {
 
 .go-shopping-btn {
   padding: 12px 48px;
-  background: linear-gradient(135deg, #8bc34a 0%, #7cb342 100%);
-  color: #fff;
+  background: linear-gradient(135deg, #FFE033 0%, #FFD700 100%);
+  color: #333;
   border: none;
   border-radius: 24px;
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 4px 12px rgba(124, 179, 66, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
 }
 
 .go-shopping-btn:active {
   transform: scale(0.95);
-  box-shadow: 0 2px 8px rgba(124, 179, 66, 0.3);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
 }
 
 /* 未登录状态 */
@@ -667,20 +667,20 @@ onMounted(() => {
 
 .login-btn {
   padding: 12px 48px;
-  background: linear-gradient(135deg, #8bc34a 0%, #7cb342 100%);
-  color: #fff;
+  background: linear-gradient(135deg, #FFE033 0%, #FFD700 100%);
+  color: #333;
   border: none;
   border-radius: 24px;
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 4px 12px rgba(124, 179, 66, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
 }
 
 .login-btn:active {
   transform: scale(0.95);
-  box-shadow: 0 2px 8px rgba(124, 179, 66, 0.3);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
 }
 
 /* 底部结算栏 */

@@ -84,7 +84,7 @@ public class MerchantMemberController {
     /**
      * 重置会员支付密码
      */
-    @PostMapping("/{userId}/pay-password")
+    @PostMapping("/{userId}/reset-pay-password")
     public Result<String> resetMemberPayPassword(
             @PathVariable Long userId,
             @RequestBody Map<String, String> data) {

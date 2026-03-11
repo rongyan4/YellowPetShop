@@ -17,11 +17,11 @@
       </div>
       <select v-model="statusFilter" @change="handleSearch" class="status-select">
         <option value="">全部状态</option>
-        <option value="pending">待付款</option>
-        <option value="paid">已付款</option>
-        <option value="shipped">已发货</option>
-        <option value="completed">已完成</option>
-        <option value="cancelled">已取消</option>
+        <option value="PENDING">待付款</option>
+        <option value="PAID">已付款</option>
+        <option value="SHIPPED">已发货</option>
+        <option value="COMPLETED">已完成</option>
+        <option value="CANCELLED">已取消</option>
       </select>
     </div>
 
@@ -55,21 +55,21 @@
               <div class="action-buttons">
                 <button @click="handleViewDetail(item)" class="btn-view">查看</button>
                 <button 
-                  v-if="item.status === 'pending'" 
+                  v-if="item.status === 'PENDING'" 
                   @click="handleUpdatePrice(item)" 
                   class="btn-edit"
                 >
                   改价
                 </button>
                 <button 
-                  v-if="item.status === 'paid'" 
+                  v-if="item.status === 'PAID'" 
                   @click="handleShip(item)" 
                   class="btn-ship"
                 >
                   发货
                 </button>
                 <button 
-                  v-if="item.status !== 'completed' && item.status !== 'cancelled'" 
+                  v-if="item.status !== 'COMPLETED' && item.status !== 'CANCELLED'" 
                   @click="handleCancel(item)" 
                   class="btn-cancel"
                 >
@@ -175,7 +175,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getOrderList, updateOrderPrice, shipOrder } from '@/api/merchant';
+import { getOrderList, updateOrderPrice, shipOrder, addLogistics } from '@/api/merchant';
 import { showConfirmDialog, showSuccessToast, showFailToast, showToast } from 'vant';
 
 const router = useRouter();
@@ -289,21 +289,37 @@ const confirmShip = async () => {
   }
 
   try {
-    const result = await shipOrder({
+    // 1. 更新订单状态为已发货
+    const shipResult = await shipOrder({
       orderId: currentOrder.value.id,
       shippingCompany: shippingCompany.value,
       trackingNo: trackingNo.value,
       remark: shipRemark.value
     });
 
-    if (result && result.code === 200) {
-      showSuccessToast('发货成功');
-      showShipDialog.value = false;
-      loadOrderList();
+    if (shipResult && shipResult.code === 200) {
+      // 2. 同时创建物流记录
+      const logisticsResult = await addLogistics({
+        orderId: currentOrder.value.id,
+        shippingCompany: shippingCompany.value,
+        trackingNo: trackingNo.value,
+        remark: shipRemark.value
+      });
+
+      if (logisticsResult && logisticsResult.code === 200) {
+        showSuccessToast('发货成功');
+        showShipDialog.value = false;
+        loadOrderList();
+      } else {
+        showSuccessToast('发货成功，但物流记录创建失败，请手动添加');
+        showShipDialog.value = false;
+        loadOrderList();
+      }
     } else {
-      showFailToast(result.msg || '发货失败');
+      showFailToast(shipResult.msg || '发货失败');
     }
   } catch (error) {
+    console.error('发货失败:', error);
     showFailToast('发货失败');
   }
 };
@@ -320,22 +336,22 @@ const handleCancel = (item) => {
 
 const getStatusText = (status) => {
   const statusMap = {
-    pending: '待付款',
-    paid: '已付款',
-    shipped: '已发货',
-    completed: '已完成',
-    cancelled: '已取消'
+    'PENDING': '待付款',
+    'PAID': '已付款',
+    'SHIPPED': '已发货',
+    'COMPLETED': '已完成',
+    'CANCELLED': '已取消'
   };
   return statusMap[status] || status;
 };
 
 const getStatusClass = (status) => {
   const classMap = {
-    pending: 'status-pending',
-    paid: 'status-paid',
-    shipped: 'status-shipped',
-    completed: 'status-completed',
-    cancelled: 'status-cancelled'
+    'PENDING': 'status-pending',
+    'PAID': 'status-paid',
+    'SHIPPED': 'status-shipped',
+    'COMPLETED': 'status-completed',
+    'CANCELLED': 'status-cancelled'
   };
   return classMap[status] || '';
 };
@@ -343,9 +359,9 @@ const getStatusClass = (status) => {
 const getShippingStatusText = (status) => {
   if (!status) return '未发货';
   const statusMap = {
-    pending: '待发货',
-    shipped: '已发货',
-    delivered: '已送达'
+    'PENDING': '待发货',
+    'SHIPPED': '已发货',
+    'DELIVERED': '已送达'
   };
   return statusMap[status] || status;
 };
@@ -657,7 +673,8 @@ onMounted(() => {
   margin-bottom: 8px;
 }
 
-.form-group input {
+.form-group input,
+.form-group textarea {
   width: 100%;
   padding: 12px;
   border: 1px solid #e8e8e8;
@@ -665,9 +682,11 @@ onMounted(() => {
   font-size: 14px;
   outline: none;
   transition: all 0.2s;
+  font-family: inherit;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group textarea:focus {
   border-color: #98D8C8;
   box-shadow: 0 0 0 3px rgba(152, 216, 200, 0.1);
 }
@@ -675,6 +694,11 @@ onMounted(() => {
 .form-group input:disabled {
   background: #f8f9fa;
   color: #95a5a6;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 60px;
 }
 
 .form-select {

@@ -101,6 +101,13 @@ const routes = [
       import("../views/BrowseHistoryView.vue"),
     meta: { requiresAuth: true }
   },
+  {
+    path: "/wallet",
+    name: "wallet",
+    component: () =>
+      import("../views/WalletView.vue"),
+    meta: { requiresAuth: true }
+  },
   // ==================== 宠物档案路由 ====================
   {
     path: "/pet-profile",
@@ -214,6 +221,12 @@ const routes = [
         path: "orders/:id",
         name: "merchant-order-detail",
         component: () => import("../views/merchant/OrderDetail.vue"),
+        meta: { requiresMerchantAuth: true }
+      },
+      {
+        path: "logistics/:id",
+        name: "merchant-logistics",
+        component: () => import("../views/merchant/LogisticsManagement.vue"),
         meta: { requiresMerchantAuth: true }
       },
       {

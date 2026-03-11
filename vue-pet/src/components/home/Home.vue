@@ -41,7 +41,10 @@
         @click="handleFeatureClick(item.type)"
       >
         <div class="feature-icon">
-          <i :class="item.icon" v-if="item.icon"></i>
+          <svg v-if="item.svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path :d="item.svg"></path>
+          </svg>
+          <i :class="item.icon" v-else-if="item.icon"></i>
         </div>
         <div class="feature-title">{{ item.title }}</div>
         <div class="feature-badge" v-if="item.badge">{{ item.badge }}</div>
@@ -99,10 +102,27 @@ const bannerImages = ref([
 ]);
 
 const features = ref([
-  { type: 'pet-profile', title: '宠物档案', icon: 'iconfont icon-piao' },
-  { type: 'member-exchange', title: '会员兑换', icon: 'iconfont icon-gift' },
-  { type: 'points-lottery', title: '积分抽奖', icon: 'iconfont icon-lottery', badge: '周三特惠' },
-  { type: 'promotions', title: '优惠活动', icon: 'iconfont icon-promotion' }
+  {
+    type: 'pet-profile',
+    title: '宠物档案',
+    svg: 'M12 2C8.5 2 5.5 4.5 5.5 8c0 2 .9 3.8 2.3 5C4.7 14.3 3 17 3 20h18c0-3-1.7-5.7-4.8-7 1.4-1.2 2.3-3 2.3-5 0-3.5-3-6-6.5-6zm0 2c2.5 0 4.5 1.8 4.5 4s-2 4-4.5 4S7.5 10.2 7.5 8 9.5 4 12 4z M8 20c0-2.2 1.8-4 4-4s4 1.8 4 4'
+  },
+  {
+    type: 'member-exchange',
+    title: '会员兑换',
+    svg: 'M20 12V22H4V12 M22 7H2v5h20V7z M12 22V7 M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z'
+  },
+  {
+    type: 'points-lottery',
+    title: '积分抽奖',
+    badge: '周三特惠',
+    svg: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z'
+  },
+  {
+    type: 'promotions',
+    title: '优惠活动',
+    svg: 'M9 14L3 8l6-6 M3 8h13a5 5 0 0 1 0 10h-1 M15 18l-3 3-3-3'
+  }
 ]);
 
 // 计算用户信息，未登录时不显示等级条
@@ -291,6 +311,13 @@ onMounted(fetchSwipeImageUrl);
         display: flex;
         align-items: center;
         justify-content: center;
+
+        svg {
+          width: 100%;
+          height: 100%;
+          color: #F5A623;
+          stroke: #F5A623;
+        }
 
         i {
           font-size: .8rem;

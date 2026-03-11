@@ -226,8 +226,7 @@ const handleAssetClick = (type) => {
   // 已登录，根据不同的资产类型跳转
   switch(type) {
     case 'wallet':
-      // 跳转到钱包页面（如果有的话）
-      showToast('钱包管理功能开发中');
+      router.push('/wallet');
       break;
     case 'coupons':
       showToast('优惠券功能开发中');

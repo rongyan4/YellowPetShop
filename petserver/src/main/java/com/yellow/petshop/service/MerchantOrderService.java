@@ -45,4 +45,10 @@ public interface MerchantOrderService {
      * @param dto 发货DTO
      */
     void shipOrder(ShipOrderDTO dto);
+    
+    /**
+     * 标记订单为已完成
+     * @param orderId 订单ID
+     */
+    void completeOrder(Long orderId);
 }

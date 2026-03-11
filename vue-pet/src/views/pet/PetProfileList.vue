@@ -2,6 +2,9 @@
   <div class="pet-profile-list">
     <!-- 顶部导航栏 -->
     <div class="header">
+      <div class="back-btn" @click="handleBack">
+        <van-icon name="arrow-left" size="20" />
+      </div>
       <div class="title">宠物档案</div>
       <div class="add-btn" @click="handleAdd">
         <van-icon name="plus" size="24" />
@@ -98,6 +101,11 @@ const getDefaultAvatar = (petType) => {
   return '/images/default_pet.png';
 };
 
+// 返回上一页
+const handleBack = () => {
+  router.back();
+};
+
 // 添加档案
 const handleAdd = () => {
   router.push('/pet-profile/add');
@@ -156,6 +164,21 @@ onMounted(() => {
   font-size: 20px;
   font-weight: 600;
   color: #333;
+}
+
+.back-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #333;
+  transition: opacity 0.2s;
+}
+
+.back-btn:active {
+  opacity: 0.6;
 }
 
 .add-btn {
