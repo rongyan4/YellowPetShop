@@ -473,8 +473,11 @@ const payOrder = async () => {
       }, 1500);
     }
   } catch (error) {
+    // 获取错误信息
+    const errorMsg = error.message || '支付失败';
+    
     // 判断是否是余额不足错误
-    if (error.message && error.message.includes('余额不足')) {
+    if (errorMsg.includes('余额不足')) {
       showPaymentPopup.value = false;
       password.value = '';
       passwordError.value = '';
@@ -482,7 +485,7 @@ const payOrder = async () => {
       // 显示详细的余额不足信息
       showConfirmDialog({
         title: '余额不足',
-        message: error.message,
+        message: errorMsg,
         confirmButtonText: '去充值',
         cancelButtonText: '取消',
         showCancelButton: true,
@@ -490,22 +493,22 @@ const payOrder = async () => {
         // 跳转到钱包充值页面（如果有的话）
         showToast('充值功能开发中');
       }).catch(() => {});
-    } else if (error.message || error.message.includes('密码错误')) {
+    } else if (errorMsg.includes('密码错误')) {
       // 密码错误
       errorCount.value++;
-      passwordError.value = error.message;
+      passwordError.value = errorMsg;
       password.value = '';
       
       if (errorCount.value >= 3) {
         showPaymentPopup.value = false;
+        errorCount.value = 0;
         showToast('密码错误次数过多，钱包已锁定');
       }
     } else {
       // 其他错误
-      passwordError.value = error.message || '支付失败';
+      passwordError.value = errorMsg;
       password.value = '';
-      showPaymentPopup.value = false;
-      showToast(error.message || '支付失败');
+      showToast(errorMsg);
     }
   }
 };
@@ -806,11 +809,12 @@ onUnmounted(() => {
 
 /* 支付密码弹窗 */
 .payment-popup {
-  width: 90vw;
-  max-width: 400px;
+  width: 100%;
+  max-width: 100%;
   padding: 20px;
   background-color: #fff;
   border-radius: 12px;
+  box-sizing: border-box;
 }
 
 .popup-header {
@@ -886,27 +890,32 @@ onUnmounted(() => {
 
 .custom-keyboard {
   margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .keyboard-row {
   display: flex;
   gap: 8px;
-  margin-bottom: 8px;
+  justify-content: center;
 }
 
 .keyboard-key {
   flex: 1;
+  min-width: 0;
   height: 48px;
   background-color: #f5f5f5;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 500;
   cursor: pointer;
   user-select: none;
   transition: all 0.2s;
+  max-width: 80px;
 }
 
 .keyboard-key:active:not(.disabled) {

@@ -233,7 +233,11 @@ export const safeRequestData = async (promise, defaultValue = null) => {
     }
     return result;
   } catch (error) {
-    // 错误已经在拦截器中处理并提示了，这里只返回默认值
+    // 如果错误响应中包含业务数据（如密码错误提示），抛出错误让调用者处理
+    if (error.response && error.response.data) {
+      throw error;
+    }
+    // 其他错误返回默认值
     return defaultValue;
   }
 };
