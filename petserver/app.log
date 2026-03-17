@@ -1831,3 +1831,65 @@
 2026-03-17T08:57:00.014+08:00 DEBUG 14476 --- [petserver] [scheduling-1] c.y.p.mapper.OrderMapper.selectList      : ==>  Preparing: SELECT id,order_sn,user_id,total_amount,original_amount,price_modified,postage,pay_amount,payment_method,status,receiver_name,receiver_phone,receiver_address,remark,shipping_status,shipping_company,tracking_no,shipping_time,cancel_time,create_time,update_time,pay_time,ship_time,complete_time FROM orders WHERE (status = ? AND create_time < ?)
 2026-03-17T08:57:00.015+08:00 DEBUG 14476 --- [petserver] [scheduling-1] c.y.p.mapper.OrderMapper.selectList      : ==> Parameters: PENDING(String), 2026-03-17T08:52:00.014458(LocalDateTime)
 2026-03-17T08:57:00.015+08:00 DEBUG 14476 --- [petserver] [scheduling-1] c.y.p.mapper.OrderMapper.selectList      : <==      Total: 0
+2026-03-17T21:28:08.675+08:00  INFO 22268 --- [petserver] [main] c.yellow.petshop.PetserverApplication    : Starting PetserverApplication using Java 23 with PID 22268 (C:\Users\rongyan\Desktop\ks\YellowPetShop\petserver\target\classes started by rongyan in C:\Users\rongyan\Desktop\ks\YellowPetShop\petserver)
+2026-03-17T21:28:08.677+08:00 DEBUG 22268 --- [petserver] [main] c.yellow.petshop.PetserverApplication    : Running with Spring Boot v3.5.8, Spring v6.2.14
+2026-03-17T21:28:08.677+08:00  INFO 22268 --- [petserver] [main] c.yellow.petshop.PetserverApplication    : No active profile set, falling back to 1 default profile: "default"
+2026-03-17T21:28:10.040+08:00  INFO 22268 --- [petserver] [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 3000 (http)
+2026-03-17T21:28:10.058+08:00  INFO 22268 --- [petserver] [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-03-17T21:28:10.059+08:00  INFO 22268 --- [petserver] [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.49]
+2026-03-17T21:28:10.110+08:00  INFO 22268 --- [petserver] [main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-03-17T21:28:10.111+08:00  INFO 22268 --- [petserver] [main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1377 ms
+2026-03-17T21:28:11.595+08:00  WARN 22268 --- [petserver] [main] c.b.m.core.metadata.TableInfoHelper      : Can not find table primary key in Class: "com.yellow.petshop.model.history.History".
+2026-03-17T21:28:11.595+08:00  WARN 22268 --- [petserver] [main] c.b.m.core.injector.DefaultSqlInjector   : class com.yellow.petshop.model.history.History ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-03-17T21:28:11.638+08:00  INFO 22268 --- [petserver] [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 3000 (http) with context path '/'
+2026-03-17T21:28:11.652+08:00  INFO 22268 --- [petserver] [main] c.yellow.petshop.PetserverApplication    : Started PetserverApplication in 3.455 seconds (process running for 4.067)
+2026-03-17T21:28:11.654+08:00  WARN 22268 --- [petserver] [main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-03-17T21:28:11.655+08:00  WARN 22268 --- [petserver] [main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
+2026-03-17T21:28:25.010+08:00  INFO 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-3] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-03-17T21:28:25.011+08:00  INFO 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-3] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-03-17T21:28:25.013+08:00  INFO 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-3] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2026-03-17T21:28:25.091+08:00  INFO 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-3] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-03-17T21:28:25.284+08:00  INFO 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-3] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@728d80cd
+2026-03-17T21:28:25.286+08:00  INFO 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-3] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-03-17T21:28:25.294+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-3] c.y.p.mapper.SwipeMapper.selectList      : ==>  Preparing: SELECT id,image_url FROM homeswipe
+2026-03-17T21:28:25.294+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-1] c.y.p.mapper.UserMapper.selectById       : ==>  Preparing: SELECT id,username,password,email,nickname,gender,avatar,status,role,birthday,phone,points,is_valid,create_time,update_time FROM user WHERE id=?
+2026-03-17T21:28:25.322+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-3] c.y.p.mapper.SwipeMapper.selectList      : ==> Parameters: 
+2026-03-17T21:28:25.324+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-1] c.y.p.mapper.UserMapper.selectById       : ==> Parameters: 1(Long)
+2026-03-17T21:28:25.372+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-3] c.y.p.mapper.SwipeMapper.selectList      : <==      Total: 2
+2026-03-17T21:28:25.374+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-1] c.y.p.mapper.UserMapper.selectById       : <==      Total: 1
+2026-03-17T21:28:27.591+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-4] c.y.p.mapper.SwipeMapper.selectList      : ==>  Preparing: SELECT id,image_url FROM homeswipe
+2026-03-17T21:28:27.592+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-4] c.y.p.mapper.SwipeMapper.selectList      : ==> Parameters: 
+2026-03-17T21:28:27.592+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-4] c.y.p.mapper.SwipeMapper.selectList      : <==      Total: 2
+2026-03-17T21:28:27.595+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-5] c.y.p.m.CommodityMapper.selectByPage     : ==>  Preparing: SELECT * FROM commodity WHERE is_valid = 1 ORDER BY id DESC LIMIT ?, ?
+2026-03-17T21:28:27.596+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-5] c.y.p.m.CommodityMapper.selectByPage     : ==> Parameters: 0(Long), 8(Long)
+2026-03-17T21:28:27.609+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-5] c.y.p.m.CommodityMapper.selectByPage     : <==      Total: 7
+2026-03-17T21:28:27.609+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-5] c.y.p.m.C.selectTotalCount               : ==>  Preparing: SELECT COUNT(*) FROM commodity WHERE is_valid = 1
+2026-03-17T21:28:27.609+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-5] c.y.p.m.C.selectTotalCount               : ==> Parameters: 
+2026-03-17T21:28:27.611+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-5] c.y.p.m.C.selectTotalCount               : <==      Total: 1
+2026-03-17T21:28:30.165+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-2] c.y.p.mapper.CommodityMapper.selectById  : ==>  Preparing: SELECT id,category_id,name,price,unit,sold,stock,main_pic_url,msg,detail,is_valid,shipping_origin,postage FROM commodity WHERE id=?
+2026-03-17T21:28:30.166+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-2] c.y.p.mapper.CommodityMapper.selectById  : ==> Parameters: 2(Long)
+2026-03-17T21:28:30.167+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-2] c.y.p.mapper.CommodityMapper.selectById  : <==      Total: 1
+2026-03-17T21:28:30.168+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-2] c.y.p.m.C.selectByCommodityId            : ==>  Preparing: SELECT * FROM commodity_image WHERE commodity_id = ? ORDER BY sort_order ASC
+2026-03-17T21:28:30.168+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-2] c.y.p.m.C.selectByCommodityId            : ==> Parameters: 2(Long)
+2026-03-17T21:28:30.176+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-2] c.y.p.m.C.selectByCommodityId            : <==      Total: 0
+2026-03-17T21:28:30.202+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-3] c.y.p.m.FavoriteMapper.checkFavorite     : ==>  Preparing: SELECT COUNT(*) FROM user_favorite WHERE user_id = ? AND commodity_id = ?
+2026-03-17T21:28:30.203+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-9] c.y.p.m.C.selectCommentsByPage           : ==>  Preparing: SELECT c.id, c.commodity_id, c.user_id, c.order_id, c.parent_id, c.star, c.content, c.status, c.is_top, c.like_count, c.reply_count, c.merchant_reply, c.merchant_reply_time, c.create_time, c.update_time, u.username, u.nickname, u.avatar FROM comment c LEFT JOIN user u ON c.user_id = u.id WHERE c.commodity_id = ? AND c.status = 'normal' ORDER BY c.is_top DESC, c.create_time DESC LIMIT ?, ?
+2026-03-17T21:28:30.203+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-8] c.y.p.m.C.selectCommentCount             : ==>  Preparing: SELECT COUNT(*) FROM comment WHERE commodity_id = ? AND status = 'normal'
+2026-03-17T21:28:30.203+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-8] c.y.p.m.C.selectCommentCount             : ==> Parameters: 2(Long)
+2026-03-17T21:28:30.203+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-3] c.y.p.m.FavoriteMapper.checkFavorite     : ==> Parameters: 1(Long), 2(Long)
+2026-03-17T21:28:30.203+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-9] c.y.p.m.C.selectCommentsByPage           : ==> Parameters: 2(Long), 0(Long), 10(Long)
+2026-03-17T21:28:30.211+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-8] c.y.p.m.C.selectCommentCount             : <==      Total: 1
+2026-03-17T21:28:30.211+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-9] c.y.p.m.C.selectCommentsByPage           : <==      Total: 0
+2026-03-17T21:28:30.211+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-3] c.y.p.m.FavoriteMapper.checkFavorite     : <==      Total: 1
+2026-03-17T21:28:30.212+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-9] c.y.p.m.C.selectCommentCount             : ==>  Preparing: SELECT COUNT(*) FROM comment WHERE commodity_id = ? AND status = 'normal'
+2026-03-17T21:28:30.212+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-9] c.y.p.m.C.selectCommentCount             : ==> Parameters: 2(Long)
+2026-03-17T21:28:30.213+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-9] c.y.p.m.C.selectCommentCount             : <==      Total: 1
+2026-03-17T21:28:30.229+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-5] c.y.p.m.BrowseHistoryMapper.selectList   : ==>  Preparing: SELECT id,user_id,commodity_id,browse_time FROM user_browse_history WHERE (user_id = ? AND commodity_id = ?)
+2026-03-17T21:28:30.230+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-5] c.y.p.m.BrowseHistoryMapper.selectList   : ==> Parameters: 1(Long), 2(Long)
+2026-03-17T21:28:30.238+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-5] c.y.p.m.BrowseHistoryMapper.selectList   : <==      Total: 0
+2026-03-17T21:28:30.241+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-5] c.y.p.mapper.BrowseHistoryMapper.insert  : ==>  Preparing: INSERT INTO user_browse_history ( user_id, commodity_id, browse_time ) VALUES ( ?, ?, ? )
+2026-03-17T21:28:30.242+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-5] c.y.p.mapper.BrowseHistoryMapper.insert  : ==> Parameters: 1(Long), 2(Long), 2026-03-17T21:28:30.239821800(LocalDateTime)
+2026-03-17T21:28:30.251+08:00 DEBUG 22268 --- [petserver] [http-nio-0.0.0.0-3000-exec-5] c.y.p.mapper.BrowseHistoryMapper.insert  : <==    Updates: 1
+2026-03-17T21:29:00.018+08:00 DEBUG 22268 --- [petserver] [scheduling-1] c.y.p.mapper.OrderMapper.selectList      : ==>  Preparing: SELECT id,order_sn,user_id,total_amount,original_amount,price_modified,postage,pay_amount,payment_method,status,receiver_name,receiver_phone,receiver_address,remark,shipping_status,shipping_company,tracking_no,shipping_time,cancel_time,create_time,update_time,pay_time,ship_time,complete_time FROM orders WHERE (status = ? AND create_time < ?)
+2026-03-17T21:29:00.019+08:00 DEBUG 22268 --- [petserver] [scheduling-1] c.y.p.mapper.OrderMapper.selectList      : ==> Parameters: PENDING(String), 2026-03-17T21:24:00.016422600(LocalDateTime)
+2026-03-17T21:29:00.037+08:00 DEBUG 22268 --- [petserver] [scheduling-1] c.y.p.mapper.OrderMapper.selectList      : <==      Total: 0

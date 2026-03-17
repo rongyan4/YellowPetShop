@@ -80,13 +80,7 @@
       <div class="detail-header">宝贝详情</div>
       <div class="detail-content">
         <div v-if="goodsInfo.detail" v-html="goodsInfo.detail" class="detail-html"></div>
-        <div v-else>
-          <img src="/images/goods/ml.png" class="detail-image" />
-          <div class="detail-text">
-            <h3>优质商品</h3>
-            <p>为您的爱宠提供最好的呵护</p>
-          </div>
-        </div>
+
       </div>
     </div>
 
