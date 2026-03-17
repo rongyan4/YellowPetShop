@@ -18,6 +18,16 @@ import java.sql.SQLException;
 public class GlobalExceptionHandler {
 
     /**
+     * 处理未授权异常（Token 缺失 / 无效）
+     */
+    @ExceptionHandler(UnauthorizedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public Result<Void> handleUnauthorizedException(UnauthorizedException e) {
+        log.warn("未授权访问: {}", e.getMessage());
+        return Result.error(e.getMessage());
+    }
+
+    /**
      * 处理SQL异常
      */
     @ExceptionHandler(SQLException.class)
