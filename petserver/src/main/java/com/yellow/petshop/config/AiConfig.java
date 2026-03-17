@@ -1,6 +1,7 @@
 package com.yellow.petshop.config;
 
 import com.yellow.petshop.tools.CommodityTools;
+import com.yellow.petshop.tools.OrderTools;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.deepseek.DeepSeekChatModel;
@@ -12,10 +13,10 @@ import org.springframework.context.annotation.Configuration;
 public class AiConfig {
 
     @Bean
-    public ChatClient chatClient(DeepSeekChatModel chatModel, CommodityTools commodityTools){
+    public ChatClient chatClient(DeepSeekChatModel chatModel, CommodityTools commodityTools, OrderTools orderTools){
         return ChatClient.builder(chatModel)
                 .defaultAdvisors(new SimpleLoggerAdvisor())//会话日志
-                .defaultTools(commodityTools)
+                .defaultTools(commodityTools, orderTools)
                 .build();
     }
 }

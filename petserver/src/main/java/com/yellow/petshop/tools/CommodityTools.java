@@ -22,7 +22,6 @@ public class CommodityTools {
           description = "根据搜索内容精确匹配商品，返回商品列表信息")
     public List<CommodityInfo> search(@ToolParam(description = "关键词") String keyword) {
         Long userId = null;
-        
         // 尝试从当前请求上下文中获取用户token
         try {
             ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
