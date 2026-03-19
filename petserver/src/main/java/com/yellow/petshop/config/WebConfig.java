@@ -54,7 +54,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/home/swipe/**",                  //(轮播图)
                         "/api/recommend/**",              //(推荐)
                         "/api/search/**",                  //(搜索)
-                        "/api/images/**"                   //静态资源
+                        "/api/images/**"   ,                //静态资源
+                        "/api/chat/send"
                 )
                 .order(2); // 优先级2
         
@@ -73,8 +74,14 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                // 允许所有来源（开发环境）
-                .allowedOriginPatterns("*")
+                // 允许的来源
+                .allowedOriginPatterns(
+                        "http://localhost:3000",
+                        "http://localhost:8080",
+                        "http://localhost:*",
+                        "http://127.0.0.1:*",
+                        "http://0.0.0.0:*"
+                )
                 // 允许的请求方法
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 // 允许的请求头

@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -93,42 +94,41 @@ public class ChatController {
     }
 
     /**
-     * 发送消息
+     * 发送消息（SSE 流式输出）
      */
-    @PostMapping("/send")
-    public Result<String> sendMessage(
+    @GetMapping(value = "/send", produces = "text/event-stream;charset=UTF-8")
+    public Flux<String> sendMessage(
             @RequestParam String message,
             @RequestParam String sessionId,
-            @RequestHeader("Authorization") String authorization) {
+            @RequestParam String token) {
 
-        String token = authorization.replace("Bearer ", "");
         Long userId = JwtUtil.getUserIdFromToken(token);
 
         // 验证会话
         if (!chatSessionService.validateSession(sessionId, userId)) {
-            return Result.error("无权访问该会话");
+            return Flux.just("event: error\ndata: 无权访问该会话\n\n");
         }
 
         // 保存用户消息
         chatHistoryService.saveMessage(sessionId, message, "user");
 
-        // 调用AI生成回复
-        String response = chatClient.prompt()
+        // 收集完整回复并保存，同时将每个 chunk 包装成 SSE data 帧推送给前端
+        StringBuilder fullReply = new StringBuilder();
+        // 调用AI生成流式回复
+        return chatClient.prompt()
                 .system(system_prompt)
                 .user(message)
 //                .advisors(MessageChatMemoryAdvisor.builder(databaseChatMemory)
 //                        .conversationId(sessionId)
 //                        .build())
-                .call()
-                .content();
-
-        // 保存AI回复
-        chatHistoryService.saveMessage(sessionId, response, "assistant");
-
-        // 更新会话时间
-        chatSessionService.updateSessionTime(sessionId);
-
-        return Result.success(response);
+                .stream()
+                .content()
+                .map(chunk -> chunk.replaceFirst("^data:\\s*", ""))// 去掉 data:
+                .doOnNext(chunk -> fullReply.append(chunk))
+                .doOnComplete(() -> {
+                    chatHistoryService.saveMessage(sessionId, fullReply.toString(), "assistant");
+                    chatSessionService.updateSessionTime(sessionId);
+                });
     }
 
     /**

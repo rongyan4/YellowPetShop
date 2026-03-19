@@ -144,11 +144,12 @@ import {
   createChatSession,
   getUserSessions,
   getSessionHistory,
-  sendMessage as sendChatMessage
+  buildStreamUrl
 } from '@/api/chat';
 import { getToken } from '@/utils/auth';
 
-// 配置 marked（允许 HTML 直通，用于 AI 输出的商品卡片等富文本）
+// 配置 marked
+// sanitize:false 允许 renderCommodityCard() 生成的商品卡片 HTML 通过 marked 时不被转义
 marked.setOptions({
   highlight: function(code, lang) {
     if (lang && hljs.getLanguage(lang)) {
@@ -162,7 +163,6 @@ marked.setOptions({
   },
   breaks: true,
   gfm: true,
-  // 允许 HTML 标签直接透传，使 AI 返回的商品卡片 HTML 能正常渲染
   sanitize: false,
 });
 
@@ -183,32 +183,74 @@ const suggestions = [
   '如何给宠物洗澡？',
 ];
 
+/**
+ * renderCommodityCard(content)
+ * 扫描 AI 输出文本中的 [[PRODUCT_CARD]]...[[/PRODUCT_CARD]] 标记，
+ * 将其中的 JSON 数据填入通用商品卡片 HTML 模板，返回替换后的字符串。
+ * 替换后的内容再交给 renderMarkdown() 做 Markdown 解析。
+ */
+function renderCommodityCard(content) {
+  if (!content) return content;
+  // 匹配 [[PRODUCT_CARD]] 与 [[/PRODUCT_CARD]] 之间的 JSON 内容（非贪婪）
+  const CARD_RE = /\[\[PRODUCT_CARD\]\]([\s\S]*?)\[\[\/PRODUCT_CARD\]\]/g;
+  return content.replace(CARD_RE, (_, jsonStr) => {
+    try {
+      const p = JSON.parse(jsonStr.trim());
+      const imgHtml = p.image
+        ? `<img src="${p.image}" alt="${p.name}" />`
+        : `<div class="pc-img-placeholder">🐾</div>`;
+      const tagHtml = p.tag
+        ? `<div class="pc-tag-row"><span class="pc-tag">${p.tag}</span></div>`
+        : '';
+      const priceHtml = p.price
+        ? `<div class="pc-price"><span class="pc-unit">¥</span>${p.price}</div>`
+        : '';
+      return [
+        `<div class="product-card" data-id="${p.id || ''}" data-url="${p.url || ''}">`,
+        `  <div class="pc-img-wrap">${imgHtml}</div>`,
+        `  <div class="pc-info">`,
+        `    <div class="pc-name">${p.name || ''}</div>`,
+        tagHtml,
+        `    <div class="pc-desc">${p.reason || ''}</div>`,
+        `    <div class="pc-bottom">`,
+        `      ${priceHtml}`,
+        `      <button class="pc-add-cart">查看详情</button>`,
+        `    </div>`,
+        `  </div>`,
+        `</div>`,
+      ].join('\n');
+    } catch (e) {
+      // JSON 解析失败时原样保留，避免破坏正文
+      console.warn('商品卡片数据解析失败:', e);
+      return '';
+    }
+  });
+}
+
 function renderMarkdown(content) {
   if (!content) return '';
   try {
-    // marked 在 gfm+html 模式下会将 HTML 标签原样保留，
-    // AI 输出的 <div class="product-card">...</div> 等结构可直接渲染
-    return marked.parse(content);
+    // 先将 AI 输出的商品卡片标记转换为 HTML，再做 Markdown 解析
+    const withCards = renderCommodityCard(content);
+    return marked.parse(withCards);
   } catch (error) {
     console.error('Markdown渲染错误:', error);
     return content;
   }
 }
 
-// 商品卡片「加入购物车」点击处理（AI 渲染的卡片按钮通过事件委托触发）
+// 商品卡片「查看详情」点击处理（通过事件委托触发）
 function handleBubbleClick(event) {
   const btn = event.target.closest('.pc-add-cart');
   if (!btn) return;
   const card = btn.closest('.product-card');
   if (!card) return;
   const productId = card.dataset.id;
-  const productName = card.querySelector('.pc-name')?.textContent || '';
-  // 跳转到商品详情或直接加购（此处预留路由跳转，可按项目实际接口替换）
+  const productUrl = card.dataset.url;
   if (productId) {
-    router.push({
-        path: '/good-details',
-        query: { id: productId } // 推荐：通过query传递参数，而非手动拼接
-    });
+    router.push({ path: '/good-details', query: { id: productId } });
+  } else if (productUrl) {
+    router.push(productUrl);
   }
 }
 
@@ -309,30 +351,49 @@ async function sendMessage() {
   };
   messages.value.push(aiMessage);
 
-  try {
-    const res = await sendChatMessage({ message: userMessage, sessionId: currentSessionId.value });
+  // 用 EventSource 建立 SSE 连接，实现流式追加内容
+  const url = buildStreamUrl({ message: userMessage, sessionId: currentSessionId.value });
+  const es = new EventSource(url);
+
+  es.onmessage = (event) => {
+    const data = event.data;
+    if (data === '[DONE]') {
+      // 流结束：关闭连接，更新 loading 状态，刷新会话列表
+      es.close();
+      const idx = messages.value.findIndex(m => m.id === aiMsgId);
+      if (idx > -1) {
+        messages.value[idx] = { ...messages.value[idx], loading: false };
+      }
+      isLoading.value = false;
+      loadSessions();
+      return;
+    }
+    const idx = messages.value.findIndex(m => m.id === aiMsgId);
+    if (idx > -1) {
+      // 第一个 chunk 到达时关闭 loading（隐藏三个点），之后逐字追加
+      if (messages.value[idx].loading) {
+        messages.value[idx] = { ...messages.value[idx], loading: false, content: '' };
+      }
+      messages.value[idx].content += data;
+      // 强制替换对象引用，触发 Vue 响应式重新渲染 v-html 内嵌 HTML
+      messages.value[idx] = { ...messages.value[idx] };
+      nextTick(() => scrollToBottom());
+    }
+  };
+
+  es.onerror = (err) => {
+    console.error('SSE 连接错误', err);
+    es.close();
     const idx = messages.value.findIndex(m => m.id === aiMsgId);
     if (idx > -1) {
       messages.value[idx] = {
         ...messages.value[idx],
-        content: res.data || '收到您的问题，正在处理...',
+        content: messages.value[idx].content || '抱歉，服务暂时不可用，请稍后重试。',
         loading: false,
       };
     }
-    await loadSessions();
-  } catch (error) {
-    console.error('发送消息失败', error);
-    const idx = messages.value.findIndex(m => m.id === aiMsgId);
-    if (idx > -1) {
-      messages.value[idx] = {
-        ...messages.value[idx],
-        content: '抱歉，服务暂时不可用，请稍后重试。',
-        loading: false,
-      };
-    }
-  } finally {
     isLoading.value = false;
-  }
+  };
 }
 
 function handleEnter(e) {

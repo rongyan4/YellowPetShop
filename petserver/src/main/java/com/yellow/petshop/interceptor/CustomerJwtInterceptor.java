@@ -31,15 +31,19 @@ public class CustomerJwtInterceptor implements HandlerInterceptor {
 
         // 从请求头中获取Token
         String authHeader = request.getHeader("Authorization");
-        
-        // 检查Authorization头是否存在
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            sendErrorResponse(response, 401, "未提供认证令牌");
-            return false;
-        }
+        String token;
 
-        // 提取Token（去掉"Bearer "前缀）
-        String token = authHeader.substring(7);
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            // 标准 Authorization 头（axios 等普通请求）
+            token = authHeader.substring(7);
+        } else {
+            // 降级：从 query 参数读取（EventSource 等无法设置请求头的场景）
+            token = request.getParameter("token");
+            if (token == null || token.isBlank()) {
+                sendErrorResponse(response, 401, "未提供认证令牌");
+                return false;
+            }
+        }
 
         try {
             // 验证Token是否有效

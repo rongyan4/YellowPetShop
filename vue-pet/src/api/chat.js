@@ -1,4 +1,5 @@
 import request from '@/utils/request';
+import { getToken } from '@/utils/auth';
 
 /**
  * 创建新会话
@@ -31,16 +32,13 @@ export function getSessionHistory(sessionId) {
 }
 
 /**
- * 发送消息（同步）
- * AI 响应时间较长，单独设置 120s 超时，避免过早触发超时错误
+ * 构建 SSE 流式发送消息的 URL（供 EventSource 使用）
+ * EventSource 只支持 GET，token 通过 query 参数传递
  */
-export function sendMessage(data) {
-  return request({
-    url: '/chat/send',
-    method: 'post',
-    params: data,
-    timeout: 120000
-  });
+export function buildStreamUrl({ message, sessionId }) {
+  const token = getToken();
+  const params = new URLSearchParams({ message, sessionId, token });
+  return `http://localhost:3000/api/chat/send?${params.toString()}`;
 }
 
 /**
