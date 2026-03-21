@@ -155,6 +155,7 @@
 import { ref, onMounted, onUnmounted, nextTick, onBeforeUnmount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { showToast, showDialog } from 'vant';
+import { useUserStore } from '@/stores/user';
 import GoodDetailsTop from '@/components/good/GoodDetailsTop.vue';
 import GoodDetailsNavi from '@/components/good/GoodDetailsNavi.vue';
 import { getGoodDetailSafe } from '@/api/goods';
@@ -166,6 +167,7 @@ import { saveScrollPosition, restoreScrollPosition } from '@/utils/scrollPositio
 
 const router = useRouter();
 const route = useRoute();
+const userStore = useUserStore();
 
 // 滚动相关
 const scrollContainer = ref(null);
@@ -236,8 +238,7 @@ const contactService = () => {
 
 const toggleFavorite = async () => {
   // 检查是否登录
-  const token = localStorage.getItem('token');
-  if (!token) {
+  if (!userStore.isLoggedIn) {
     showDialog({
       title: '提示',
       message: '请先登录',
@@ -276,8 +277,7 @@ const toggleFavorite = async () => {
 
 const addToCart = async () => {
   // 检查是否登录
-  const token = localStorage.getItem('token');
-  if (!token) {
+  if (!userStore.isLoggedIn) {
     showDialog({
       title: '提示',
       message: '请先登录',
@@ -313,8 +313,7 @@ const addToCart = async () => {
 // 显示数量选择弹窗
 const showQuantityPopup = () => {
   // 检查是否登录
-  const token = localStorage.getItem('token');
-  if (!token) {
+  if (!userStore.isLoggedIn) {
     showDialog({
       title: '提示',
       message: '请先登录',
@@ -498,8 +497,7 @@ const loadGoodsDetail = async (goodsId) => {
 
 // 检查收藏状态
 const checkFavoriteStatus = async (goodsId) => {
-  const token = localStorage.getItem('token');
-  if (!token) return;
+  if (!userStore.isLoggedIn) return;
   
   try {
     const result = await checkFavoriteSafe(goodsId);
@@ -513,8 +511,7 @@ const checkFavoriteStatus = async (goodsId) => {
 
 // 添加浏览记录
 const addBrowseRecord = async (goodsId) => {
-  const token = localStorage.getItem('token');
-  if (!token) return;
+  if (!userStore.isLoggedIn) return;
   
   try {
     await addBrowseHistorySafe(goodsId);

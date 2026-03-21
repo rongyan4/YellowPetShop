@@ -1,26 +1,10 @@
 /**
- * 获取商家Token
+ * 商家认证工具函数
+ * merchant_token 已改为 HttpOnly Cookie 存储，前端不再直接读写 token
  */
-export function getMerchantToken() {
-  return localStorage.getItem('merchant_token');
-}
 
 /**
- * 设置商家Token
- */
-export function setMerchantToken(token) {
-  localStorage.setItem('merchant_token', token);
-}
-
-/**
- * 移除商家Token
- */
-export function removeMerchantToken() {
-  localStorage.removeItem('merchant_token');
-}
-
-/**
- * 解析JWT Token
+ * 解析JWT Token（用于读取 payload 信息，token 本身由 Cookie 携带）
  */
 export function parseMerchantJWT(token) {
   try {

@@ -15,7 +15,9 @@ import com.yellow.petshop.service.MerchantService;
 import com.yellow.petshop.service.MerchantOrderService;
 import com.yellow.petshop.service.MerchantGoodsService;
 import com.yellow.petshop.util.JwtUtil;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,7 +41,7 @@ public class MerchantController {
      * 商家登录
      */
     @PostMapping("/login")
-    public Result<String> login(@RequestBody MerchantLoginRequest request, HttpServletRequest httpRequest) {
+    public Result<String> login(@RequestBody MerchantLoginRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         try {
             String ipAddress = getIpAddress(httpRequest);
             String userAgent = httpRequest.getHeader("User-Agent");
@@ -51,10 +53,30 @@ public class MerchantController {
                     userAgent
             );
             
-            return Result.success(token);
+            // 将 merchant_token 写入 HttpOnly Cookie
+            Cookie cookie = new Cookie("merchant_token", token);
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            cookie.setMaxAge(7 * 24 * 3600); // 7天
+            httpResponse.addCookie(cookie);
+            return Result.success("登录成功");
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }
+    }
+
+    /**
+     * 商家退出登录
+     */
+    @PostMapping("/logout")
+    public Result<String> logout(HttpServletResponse httpResponse) {
+        // 清除 HttpOnly Cookie 中的 merchant_token
+        Cookie cookie = new Cookie("merchant_token", "");
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        httpResponse.addCookie(cookie);
+        return Result.success("退出成功");
     }
 
     /**
@@ -309,9 +331,24 @@ public class MerchantController {
     }
 
     /**
-     * 从Token中获取商家ID
+     * 从请求属性中获取商家ID（由 MerchantJwtInterceptor 注入）
      */
     private Long getMerchantIdFromToken(HttpServletRequest request) {
+        // 优先使用拦截器注入的属性（HttpOnly Cookie 认证后写入）
+        Object merchantIdAttr = request.getAttribute("merchantId");
+        if (merchantIdAttr != null) {
+            return Long.valueOf(merchantIdAttr.toString());
+        }
+        // 降级：从 HttpOnly Cookie 中手动提取
+        jakarta.servlet.http.Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (jakarta.servlet.http.Cookie cookie : cookies) {
+                if ("merchant_token".equals(cookie.getName())) {
+                    return JwtUtil.getUserIdFromToken(cookie.getValue());
+                }
+            }
+        }
+        // 最终降级：从 Authorization 请求头读取（兼容非浏览器客户端）
         String token = request.getHeader("Authorization");
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);

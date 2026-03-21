@@ -59,7 +59,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { showToast, showSuccessToast, showFailToast, showLoadingToast, closeToast } from 'vant'
 import { login } from '@/api/user'
-import { parseJWT } from '@/utils/auth'
+import { getCurrentUserInfo } from '@/api/user'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -116,24 +116,14 @@ const handleLogin = async () => {
     closeToast()
     
     if (response && response.code === 200) {
-      // 后端返回的是token
-      const token = response.data
+      // token 已由后端写入 HttpOnly Cookie，前端只需获取用户信息
+      const infoRes = await getCurrentUserInfo()
+      const userInfo = infoRes?.data || { username: username.value }
       
-      // 解析token获取用户信息
-      const payload = parseJWT(token)
-      const userInfo = {
-        id: payload?.userId || payload?.sub,
-        username: payload?.username || username.value,
-      }
+      // 保存用户信息到 Pinia store
+      userStore.login({ userInfo })
       
-      // 保存token和用户信息到Pinia store（会自动同步到localStorage）
-      userStore.login({
-        token: token,
-        userInfo: userInfo
-      })
-      
-      console.log('登录成功，Token已保存:', token)
-      console.log('用户信息:', userInfo)
+      console.log('登录成功，用户信息:', userInfo)
       
       showSuccessToast('登录成功！')
       closeModal()

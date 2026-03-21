@@ -1,5 +1,4 @@
 import request from '@/utils/request';
-import { getToken } from '@/utils/auth';
 
 /**
  * 创建新会话
@@ -33,12 +32,12 @@ export function getSessionHistory(sessionId) {
 
 /**
  * 构建 SSE 流式发送消息的 URL（供 EventSource 使用）
- * EventSource 只支持 GET，token 通过 query 参数传递
+ * token 通过 HttpOnly Cookie 自动携带，无需手动传递
+ * 走 /api 代理路径以确保 Cookie 正确转发
  */
 export function buildStreamUrl({ message, sessionId }) {
-  const token = getToken();
-  const params = new URLSearchParams({ message, sessionId, token });
-  return `http://localhost:3000/api/chat/send?${params.toString()}`;
+  const params = new URLSearchParams({ message, sessionId });
+  return `/api/chat/send?${params.toString()}`;
 }
 
 /**

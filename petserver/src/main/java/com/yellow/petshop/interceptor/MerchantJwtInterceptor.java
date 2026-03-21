@@ -1,6 +1,7 @@
 package com.yellow.petshop.interceptor;
 
 import com.yellow.petshop.util.JwtUtil;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
@@ -29,17 +30,30 @@ public class MerchantJwtInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        // 从请求头中获取Token
-        String authHeader = request.getHeader("Authorization");
-        
-        // 检查Authorization头是否存在
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        // 优先从 HttpOnly Cookie 中获取 merchant_token
+        String token = null;
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("merchant_token".equals(cookie.getName())) {
+                    token = cookie.getValue();
+                    break;
+                }
+            }
+        }
+
+        // 降级：从 Authorization 请求头读取（兼容非浏览器客户端）
+        if (token == null || token.isBlank()) {
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                token = authHeader.substring(7);
+            }
+        }
+
+        if (token == null || token.isBlank()) {
             sendErrorResponse(response, 401, "未提供认证令牌");
             return false;
         }
-
-        // 提取Token（去掉"Bearer "前缀）
-        String token = authHeader.substring(7);
 
         try {
             // 验证Token是否有效

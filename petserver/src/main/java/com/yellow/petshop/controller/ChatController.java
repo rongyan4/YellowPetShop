@@ -14,6 +14,8 @@ import org.springframework.ai.deepseek.DeepSeekChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.StreamUtils;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
@@ -53,11 +55,30 @@ public class ChatController {
     }
 
     /**
+     * 从请求中提取 token（优先 Cookie，降级 Authorization 头）
+     */
+    private String extractToken(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("token".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
+    }
+
+    /**
      * 创建新会话
      */
     @PostMapping("/session/create")
-    public Result<String> createSession(@RequestHeader("Authorization") String authorization) {
-        String token = authorization.replace("Bearer ", "");
+    public Result<String> createSession(HttpServletRequest request) {
+        String token = extractToken(request);
         Long userId = JwtUtil.getUserIdFromToken(token);
         String sessionId = chatSessionService.createSession(userId);
         return Result.success(sessionId);
@@ -67,8 +88,8 @@ public class ChatController {
      * 获取用户所有会话
      */
     @GetMapping("/session/list")
-    public Result<List<ChatSessionVO>> getUserSessions(@RequestHeader("Authorization") String authorization) {
-        String token = authorization.replace("Bearer ", "");
+    public Result<List<ChatSessionVO>> getUserSessions(HttpServletRequest request) {
+        String token = extractToken(request);
         Long userId = JwtUtil.getUserIdFromToken(token);
         List<ChatSessionVO> sessions = chatSessionService.getUserSessions(userId);
         return Result.success(sessions);
@@ -80,8 +101,8 @@ public class ChatController {
     @GetMapping("/history/{sessionId}")
     public Result<List<ChatHistoryVO>> getSessionHistory(
             @PathVariable String sessionId,
-            @RequestHeader("Authorization") String authorization) {
-        String token = authorization.replace("Bearer ", "");
+            HttpServletRequest request) {
+        String token = extractToken(request);
         Long userId = JwtUtil.getUserIdFromToken(token);
 
         // 验证会话是否属于该用户
@@ -100,8 +121,9 @@ public class ChatController {
     public Flux<String> sendMessage(
             @RequestParam String message,
             @RequestParam String sessionId,
-            @RequestParam String token) {
+            HttpServletRequest request) {
 
+        String token = extractToken(request);
         Long userId = JwtUtil.getUserIdFromToken(token);
 
         // 验证会话
@@ -128,7 +150,8 @@ public class ChatController {
                 .doOnComplete(() -> {
                     chatHistoryService.saveMessage(sessionId, fullReply.toString(), "assistant");
                     chatSessionService.updateSessionTime(sessionId);
-                });
+                })
+                .concatWith(Flux.just("[DONE]"));// 流结束时发送 [DONE] 信号通知前端
     }
 
     /**
@@ -137,9 +160,9 @@ public class ChatController {
     @DeleteMapping("/history/{sessionId}")
     public Result<String> clearHistory(
             @PathVariable String sessionId,
-            @RequestHeader("Authorization") String authorization) {
+            HttpServletRequest request) {
 
-        String token = authorization.replace("Bearer ", "");
+        String token = extractToken(request);
         Long userId = JwtUtil.getUserIdFromToken(token);
 
         if (!chatSessionService.validateSession(sessionId, userId)) {

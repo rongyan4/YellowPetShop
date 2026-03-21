@@ -6,6 +6,8 @@ import com.yellow.petshop.model.user.RegisterDTO;
 import com.yellow.petshop.model.user.UserInfo;
 import com.yellow.petshop.service.UserService;
 import com.yellow.petshop.util.FileUploadUtil;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,7 +34,7 @@ public class UserController {
      * @return 登录结果，包含用户ID或token
      */
     @PostMapping("/login")
-    public Result<String> login(@RequestBody LoginDTO loginDTO) {
+    public Result<String> login(@RequestBody LoginDTO loginDTO, HttpServletResponse response) {
         // 参数校验
         if (loginDTO.getUsername() == null || loginDTO.getUsername().trim().isEmpty()) {
             return Result.error("用户名不能为空");
@@ -44,7 +46,13 @@ public class UserController {
         try {
             // 调用服务层进行登录
             String token = userService.login(loginDTO);
-            return Result.success(token);
+            // 将 token 写入 HttpOnly Cookie
+            Cookie cookie = new Cookie("token", token);
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            cookie.setMaxAge(7 * 24 * 3600); // 7天
+            response.addCookie(cookie);
+            return Result.success("登录成功");
         } catch (RuntimeException e) {
             // 捕获业务异常
             return Result.error(e.getMessage());
@@ -150,9 +158,13 @@ public class UserController {
      * @return 退出结果
      */
     @PostMapping("/logout")
-    public Result<String> logout() {
-        // JWT是无状态的，前端删除token即可
-        // 如果需要服务端记录token黑名单，可以在这里实现
+    public Result<String> logout(HttpServletResponse response) {
+        // 清除 HttpOnly Cookie 中的 token
+        Cookie cookie = new Cookie("token", "");
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
         return Result.success("退出成功");
     }
 

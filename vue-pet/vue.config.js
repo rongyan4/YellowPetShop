@@ -18,6 +18,8 @@ module.exports = defineConfig({
 				pathRewrite: {
 				'^/api': '/api'
 				},
+				// 将后端 Set-Cookie 的域名改写为 localhost，确保浏览器能正确存储 Cookie
+				cookieDomainRewrite: { '*': 'localhost' },
 				onProxyReq: function(proxyReq, req, res) {
 					// 禁用缓存
 					proxyReq.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -29,6 +31,12 @@ module.exports = defineConfig({
 					proxyRes.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
 					proxyRes.headers['Pragma'] = 'no-cache';
 					proxyRes.headers['Expires'] = '0';
+					// 将 Set-Cookie 中的 Secure 属性去除，确保 http://localhost 下也能写入 Cookie
+					if (proxyRes.headers['set-cookie']) {
+						proxyRes.headers['set-cookie'] = proxyRes.headers['set-cookie'].map(
+							cookie => cookie.replace(/;\s*Secure/gi, '')
+						);
+					}
 				}
 			},
 			'/comment_image': {

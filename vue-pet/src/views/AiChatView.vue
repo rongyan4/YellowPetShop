@@ -64,7 +64,7 @@
           <!-- 用户消息 -->
           <template v-else-if="msg.role === 'user'">{{ msg.content }}</template>
           <!-- AI 消息渲染 Markdown / HTML 商品卡片 -->
-          <div v-else class="markdown-body" v-html="renderMarkdown(msg.content)" @click="handleBubbleClick"></div>
+          <div v-else class="markdown-body" v-html="msg.html || ''" @click="handleBubbleClick"></div>
         </div>
       </div>
     </div>
@@ -146,7 +146,7 @@ import {
   getSessionHistory,
   buildStreamUrl
 } from '@/api/chat';
-import { getToken } from '@/utils/auth';
+import { useUserStore } from '@/stores/user';
 
 // 配置 marked
 // sanitize:false 允许 renderCommodityCard() 生成的商品卡片 HTML 通过 marked 时不被转义
@@ -167,6 +167,7 @@ marked.setOptions({
 });
 
 const router = useRouter();
+const userStore = useUserStore();
 const messages = ref([]);
 const inputMessage = ref('');
 const isLoading = ref(false);
@@ -230,13 +231,28 @@ function renderCommodityCard(content) {
 function renderMarkdown(content) {
   if (!content) return '';
   try {
-    // 先将 AI 输出的商品卡片标记转换为 HTML，再做 Markdown 解析
-    const withCards = renderCommodityCard(content);
-    return marked.parse(withCards);
+    // 1. 先替换所有「已完整闭合」的商品卡片（开始+结束标记都在）
+    const withCompleteCards = renderCommodityCard(content);
+    // 2. 截断掉最后一个未闭合的 [[PRODUCT_CARD]]（流式尚未输完的那张）
+    const safeContent = trimIncompleteCard(withCompleteCards);
+    // 3. 末尾补换行，确保最后一行标题能被 marked 正确识别为块级元素
+    return marked.parse(safeContent + '\n');
   } catch (error) {
     console.error('Markdown渲染错误:', error);
     return content;
   }
+}
+
+/**
+ * 截断文本中最后一个未闭合的 [[PRODUCT_CARD]] 及其后内容。
+ * renderCommodityCard 已将完整的卡片替换为 HTML，
+ * 因此此时文本里残留的 [[PRODUCT_CARD]] 一定是未闭合的那张。
+ */
+function trimIncompleteCard(content) {
+  const startIdx = content.lastIndexOf('[[PRODUCT_CARD]]');
+  if (startIdx === -1) return content;
+  // 存在未闭合开始标记，截断到它之前
+  return content.slice(0, startIdx);
 }
 
 // 商品卡片「查看详情」点击处理（通过事件委托触发）
@@ -255,7 +271,7 @@ function handleBubbleClick(event) {
 }
 
 onMounted(async () => {
-  if (!getToken()) {
+  if (!userStore.isLoggedIn) {
     router.push('/login');
     return;
   }
@@ -290,6 +306,7 @@ async function loadHistory() {
         id: item.id || idx,
         role: item.role,
         content: item.content,
+        html: item.role === 'assistant' ? renderMarkdown(item.content) : '',
         datetime: item.datetime,
         loading: false,
       }));
@@ -346,6 +363,7 @@ async function sendMessage() {
     id: aiMsgId,
     role: 'assistant',
     content: '',
+    html: '',
     datetime: new Date().toISOString(),
     loading: true,
   };
@@ -358,11 +376,13 @@ async function sendMessage() {
   es.onmessage = (event) => {
     const data = event.data;
     if (data === '[DONE]') {
-      // 流结束：关闭连接，更新 loading 状态，刷新会话列表
+      // 流结束：关闭连接，做最终完整渲染（此时内容完整，商品卡片可全部解析）
       es.close();
       const idx = messages.value.findIndex(m => m.id === aiMsgId);
       if (idx > -1) {
-        messages.value[idx] = { ...messages.value[idx], loading: false };
+        messages.value[idx].loading = false;
+        // 用完整内容重新渲染一次，确保最后一张商品卡片和标题都正确显示
+        messages.value[idx].html = renderMarkdown(messages.value[idx].content);
       }
       isLoading.value = false;
       loadSessions();
@@ -372,11 +392,12 @@ async function sendMessage() {
     if (idx > -1) {
       // 第一个 chunk 到达时关闭 loading（隐藏三个点），之后逐字追加
       if (messages.value[idx].loading) {
-        messages.value[idx] = { ...messages.value[idx], loading: false, content: '' };
+        messages.value[idx].loading = false;
+        messages.value[idx].content = '';
       }
       messages.value[idx].content += data;
-      // 强制替换对象引用，触发 Vue 响应式重新渲染 v-html 内嵌 HTML
-      messages.value[idx] = { ...messages.value[idx] };
+      // 直接更新 html 字段，模板绑定 msg.html，避免 v-html 每帧重算
+      messages.value[idx].html = renderMarkdown(messages.value[idx].content);
       nextTick(() => scrollToBottom());
     }
   };
@@ -386,11 +407,10 @@ async function sendMessage() {
     es.close();
     const idx = messages.value.findIndex(m => m.id === aiMsgId);
     if (idx > -1) {
-      messages.value[idx] = {
-        ...messages.value[idx],
-        content: messages.value[idx].content || '抱歉，服务暂时不可用，请稍后重试。',
-        loading: false,
-      };
+      const finalContent = messages.value[idx].content || '抱歉，服务暂时不可用，请稍后重试。';
+      messages.value[idx].content = finalContent;
+      messages.value[idx].html = renderMarkdown(finalContent);
+      messages.value[idx].loading = false;
     }
     isLoading.value = false;
   };

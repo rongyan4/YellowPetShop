@@ -35,7 +35,6 @@ import { onBeforeMount, onMounted, onBeforeUnmount, ref, nextTick } from 'vue';
 import { Tab,Tabs } from 'vant';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
-import { getToken, parseJWT } from '@/utils/auth';
 import { saveScrollPosition, restoreScrollPosition } from '@/utils/scrollPosition';
 
 const route = useRoute();
@@ -47,28 +46,6 @@ onBeforeMount(async() => {
 })
 
 onMounted(() => {
-  // 获取token
-  const token = getToken();
-  
-  if (token) {
-    console.log('=== JWT Token 信息 ===');
-    console.log('Token:', token);
-    
-    // 解析token获取用户信息
-    const payload = parseJWT(token);
-    if (payload) {
-      console.log('Token Payload:', payload);
-      console.log('Username:', payload.username || payload.sub);
-      console.log('User ID:', payload.userId || payload.sub);
-      console.log('过期时间:', payload.exp ? new Date(payload.exp * 1000).toLocaleString() : '未知');
-    } else {
-      console.log('Token解析失败');
-    }
-    console.log('=====================');
-  } else {
-    console.log('未登录，没有Token');
-  }
-  
   // 恢复滚动位置和标签页
   restoreScrollPosition(route.path);
 });

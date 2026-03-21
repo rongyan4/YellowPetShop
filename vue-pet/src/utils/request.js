@@ -11,6 +11,7 @@ export const IMAGE_BASE_URL = process.env.VUE_APP_IMAGE_BASE_URL || 'http://loca
 const service = axios.create({
   baseURL: '/api/', // API 基础路径
   timeout: 10000, // 请求超时时间
+  withCredentials: true, // 携带 HttpOnly Cookie
   headers: {
     'Content-Type': 'application/json;charset=UTF-8',
     'Cache-Control': 'no-cache',
@@ -18,7 +19,7 @@ const service = axios.create({
   }
 });
 
-// 请求拦截器 - JWT Token 处理
+// 请求拦截器
 service.interceptors.request.use(
   config => {
     const requestId = ++globalRequestCounter;
@@ -30,22 +31,6 @@ service.interceptors.request.use(
     console.log('Data:', config.data);
     console.log('Timestamp:', new Date().toISOString());
     
-    // 判断是否是商家端请求
-    const isMerchantRequest = config.url.includes('/merchant');
-    
-    // 根据请求类型选择对应的 token
-    let token;
-    if (isMerchantRequest) {
-      token = localStorage.getItem('merchant_token');
-    } else {
-      token = localStorage.getItem('token');
-    }
-    
-    // 如果 token 存在，添加到请求头
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    
     // 添加时间戳防止缓存
     config.headers['X-Request-Time'] = Date.now();
     
@@ -55,11 +40,9 @@ service.interceptors.request.use(
       config.headers['Pragma'] = 'no-cache';
     }
     
-    // 可以在这里添加其他请求头信息
     return config;
   },
   error => {
-    // 对请求错误做些什么
     console.error('请求错误:', error);
     return Promise.reject(error);
   }
@@ -81,46 +64,33 @@ service.interceptors.response.use(
     if (res.code && res.code !== 200) {
       console.error('业务错误 [#' + requestId + ']:', res);
       console.error('错误时间:', new Date().toISOString());
-      // 抛出错误，让 catch 块捕获
       const error = new Error(res.msg || '请求失败');
       error.response = { data: res };
       return Promise.reject(error);
     }
     
-    // 直接返回响应数据，让业务代码自己处理不同的 code
-    // 这样可以根据具体业务需求决定是否显示错误提示
     return res;
   },
   error => {
-    // 对响应错误做点什么
     console.error('响应错误:', error);
     let errorMsg = '网络错误，请稍后重试';
     let shouldShowToast = true;
     
     if (error.response) {
-      // 服务器返回了错误状态码
       switch (error.response.status) {
         case 400:
           errorMsg = '请求参数错误';
           break;
-        case 401:
+        case 401: {
           // 判断是否是商家端请求
           const isMerchantRequest = error.config.url.includes('/merchant');
-          
           if (isMerchantRequest) {
-            // 清除商家端 token
-            localStorage.removeItem('merchant_token');
-            localStorage.removeItem('merchant_info');
-            // 跳转到商家登录页
             window.location.href = '/merchant/login';
-          } else {
-            // 清除客户端 token 和用户信息
-            localStorage.removeItem('token');
-            localStorage.removeItem('userInfo');
           }
-          // 不显示"登录已过期"的提示，让各个页面自己处理登录逻辑
+          // token 存在 HttpOnly Cookie 中，无需手动清除
           shouldShowToast = false;
           break;
+        }
         case 403:
           errorMsg = '拒绝访问';
           break;
@@ -134,11 +104,9 @@ service.interceptors.response.use(
           errorMsg = `请求失败: ${error.response.status}`;
       }
     } else if (error.request) {
-      // 请求已发出，但没有收到响应
       errorMsg = '网络连接失败，请检查网络';
     }
     
-    // 只在需要时显示提示
     if (shouldShowToast) {
       showToast({
         message: errorMsg,
@@ -189,81 +157,44 @@ export const del = (url, params = {}) => {
 
 /**
  * 安全请求包装函数，自动处理错误，无需 try-catch
- * @param {Promise} promise - 请求 Promise
- * @param {*} defaultValue - 错误时的默认返回值，默认为 null
- * @returns {Promise} 返回处理后的 Promise，成功返回响应对象，失败返回默认值
- * 
- * @example
- * // 使用方式
- * const result = await safeRequest(getSwipeImages());
- * if (result) {
- *   SwipeImages.value = result.data;
- * }
  */
 export const safeRequest = async (promise, defaultValue = null) => {
   try {
     const result = await promise;
     return result;
   } catch (error) {
-    // 错误已经在拦截器中处理并提示了，这里只返回默认值
     return defaultValue;
   }
 };
 
 /**
  * 安全请求并提取数据
- * 自动处理错误并提取响应数据，无需手动提取 data 字段
- * @param {Promise} promise - 请求 Promise
- * @param {*} defaultValue - 错误时的默认返回值，默认为 null
- * @returns {Promise} 返回处理后的 Promise，成功返回提取的数据，失败返回默认值
- * 
- * @example
- * // 使用方式
- * const data = await safeRequestData(getSwipeImages());
- * if (data) {
- *   SwipeImages.value = data;
- * }
  */
 export const safeRequestData = async (promise, defaultValue = null) => {
   try {
     const result = await promise;
-    // 提取响应数据
     if (result && result.data !== undefined) {
       return result.data;
     }
     return result;
   } catch (error) {
-    // 如果错误响应中包含业务数据（如密码错误提示），抛出错误让调用者处理
     if (error.response && error.response.data) {
       throw error;
     }
-    // 其他错误返回默认值
     return defaultValue;
   }
 };
 
 /**
  * 获取完整的图片URL
- * @param {string} relativePath - 相对路径，如：/api/images/goods/goods_1_xxx.jpg
- * @returns {string} 完整URL
- * 
- * @example
- * // 使用方式
- * const fullUrl = getImageUrl('/api/images/goods/goods_1_xxx.jpg');
- * // 返回: http://localhost:3000/api/images/goods/goods_1_xxx.jpg
  */
 export const getImageUrl = (relativePath) => {
   if (!relativePath) return '';
-  
-  // 如果已经是完整URL，直接返回
   if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
     return relativePath;
   }
-  
-  // 拼接完整URL
   return IMAGE_BASE_URL + relativePath;
 };
 
-// 导出 axios 实例，以便需要时直接使用
+// 导出 axios 实例
 export default service;
-

@@ -12,7 +12,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Home from "@/components/home/Home.vue";
 import Tabbar from "@/components/TabBar.vue";
-import { getToken, parseJWT, isAuthenticated } from '@/utils/auth';
+import { isAuthenticated } from '@/utils/auth';
 import { useUserStore } from '@/stores/user';
 import { getCurrentUserInfo } from '@/api/user';
 
@@ -31,10 +31,8 @@ const userInfo = ref({
 });
 
 onMounted(async () => {
-  // 检查登录状态
-  const token = getToken();
-
-  if (token && isAuthenticated()) {
+  // 检查登录状态（token 存于 HttpOnly Cookie，前端不可读，用 localStorage 的 userInfo 判断）
+  if (isAuthenticated()) {
     isLoggedIn.value = true;
 
     try {
@@ -59,20 +57,20 @@ onMounted(async () => {
         return;
       }
     } catch (e) {
-      console.error('获取用户信息失败，用 token 兜底展示用户名', e);
+      console.error('获取用户信息失败，从本地 store 兜底展示', e);
     }
 
-    // 如果后端请求失败，退回到 token 中的用户名占位展示
-    const payload = parseJWT(token);
-    if (payload) {
+    // 后端请求失败时，从本地 store 中读取缓存的用户信息兜底
+    const cached = userStore.userInfo;
+    if (cached) {
       userInfo.value = {
-        avatar: '/images/default_avatar.png',
-        username: payload.username || '用户',
-        level: 'S1',
-        currentPoints: 0,
-        nextLevelPoints: 20,
-        nextLevel: 'S2',
-        points: 0,
+        avatar: cached.avatar || '/images/default_avatar.png',
+        username: cached.nickname || cached.username || '用户',
+        level: cached.level || 'S1',
+        currentPoints: cached.currentPoints ?? 0,
+        nextLevelPoints: cached.nextLevelPoints ?? 20,
+        nextLevel: cached.nextLevel || 'S2',
+        points: cached.points ?? 0,
         coupons: 0
       };
     }

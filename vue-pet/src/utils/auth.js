@@ -1,36 +1,12 @@
 /**
  * 认证工具函数
- * 用于处理JWT token和用户认证相关操作
+ * token 已改为 HttpOnly Cookie 存储，前端不再直接读写 token
  */
 
-const TOKEN_KEY = 'token';
 const USER_INFO_KEY = 'userInfo';
 
 /**
- * 获取token
- * @returns {string|null}
- */
-export const getToken = () => {
-  return localStorage.getItem(TOKEN_KEY);
-};
-
-/**
- * 设置token
- * @param {string} token
- */
-export const setToken = (token) => {
-  localStorage.setItem(TOKEN_KEY, token);
-};
-
-/**
- * 移除token
- */
-export const removeToken = () => {
-  localStorage.removeItem(TOKEN_KEY);
-};
-
-/**
- * 获取用户信息
+ * 获取用户信息（从 localStorage）
  * @returns {Object|null}
  */
 export const getUserInfo = () => {
@@ -54,19 +30,18 @@ export const removeUserInfo = () => {
 };
 
 /**
- * 清除所有认证信息
+ * 清除所有认证信息（不含 token，token 由后端通过 Cookie 清除）
  */
 export const clearAuth = () => {
-  removeToken();
   removeUserInfo();
 };
 
 /**
- * 检查是否已登录
+ * 检查是否已登录（根据本地存储的用户信息判断）
  * @returns {boolean}
  */
 export const isAuthenticated = () => {
-  return !!getToken();
+  return !!getUserInfo();
 };
 
 /**
@@ -89,32 +64,4 @@ export const parseJWT = (token) => {
     console.error('解析JWT失败:', error);
     return null;
   }
-};
-
-/**
- * 检查token是否过期
- * @param {string} token
- * @returns {boolean}
- */
-export const isTokenExpired = (token) => {
-  const payload = parseJWT(token);
-  if (!payload || !payload.exp) {
-    return true;
-  }
-  // exp是秒级时间戳，需要转换为毫秒
-  return Date.now() >= payload.exp * 1000;
-};
-
-/**
- * 获取token剩余有效时间（秒）
- * @param {string} token
- * @returns {number}
- */
-export const getTokenRemainingTime = (token) => {
-  const payload = parseJWT(token);
-  if (!payload || !payload.exp) {
-    return 0;
-  }
-  const remaining = payload.exp * 1000 - Date.now();
-  return Math.max(0, Math.floor(remaining / 1000));
 };

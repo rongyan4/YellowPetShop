@@ -76,11 +76,10 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addMapping("/**")
                 // 允许的来源
                 .allowedOriginPatterns(
-                        "http://localhost:3000",
-                        "http://localhost:8080",
                         "http://localhost:*",
                         "http://127.0.0.1:*",
-                        "http://0.0.0.0:*"
+                        "http://192.168.88.*",
+                        "https://petshop.rongyan.xyz"
                 )
                 // 允许的请求方法
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")

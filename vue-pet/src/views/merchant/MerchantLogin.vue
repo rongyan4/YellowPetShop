@@ -90,9 +90,8 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { merchantLogin } from '@/api/merchant';
+import { merchantLogin, getMerchantInfo } from '@/api/merchant';
 import { useMerchantStore } from '@/stores/merchant';
-import { parseMerchantJWT } from '@/utils/merchantAuth';
 import { showToast, showSuccessToast, showFailToast } from 'vant';
 
 const router = useRouter();
@@ -118,18 +117,11 @@ const handleLogin = async () => {
     });
 
     if (response && response.code === 200) {
-      const token = response.data;
-      const payload = parseMerchantJWT(token);
-      
-      const merchantInfo = {
-        id: payload?.userId || payload?.sub,
-        username: payload?.username || username.value
-      };
+      // token 已由后端写入 HttpOnly Cookie，前端只需获取商家信息
+      const infoRes = await getMerchantInfo();
+      const merchantInfo = infoRes?.data || { username: username.value };
 
-      merchantStore.login({
-        token: token,
-        merchantInfo: merchantInfo
-      });
+      merchantStore.login({ merchantInfo });
 
       showSuccessToast('登录成功！');
       

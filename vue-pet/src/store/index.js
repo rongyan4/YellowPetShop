@@ -2,36 +2,22 @@ import { createStore } from "vuex";
 
 /**
  * Vuex Store - Vue3 风格
- * 用户状态管理
+ * token 已改为 HttpOnly Cookie 存储，Store 只维护用户信息
  */
 export default createStore({
   state: () => ({
-    // 用户 token
-    token: localStorage.getItem('token') || '',
     // 用户信息
     userInfo: JSON.parse(localStorage.getItem('userInfo') || 'null'),
   }),
   
   getters: {
-    // 获取 token
-    getToken: (state) => state.token,
     // 获取用户信息
     getUserInfo: (state) => state.userInfo,
     // 判断是否已登录
-    isLoggedIn: (state) => !!state.token,
+    isLoggedIn: (state) => !!state.userInfo,
   },
   
   mutations: {
-    // 设置 token
-    SET_TOKEN(state, token) {
-      state.token = token;
-      if (token) {
-        localStorage.setItem('token', token);
-      } else {
-        localStorage.removeItem('token');
-      }
-    },
-    
     // 设置用户信息
     SET_USER_INFO(state, userInfo) {
       state.userInfo = userInfo;
@@ -42,19 +28,16 @@ export default createStore({
       }
     },
     
-    // 清除登录信息
+    // 清除登录信息（token Cookie 由后端清除）
     CLEAR_LOGIN_INFO(state) {
-      state.token = '';
       state.userInfo = null;
-      localStorage.removeItem('token');
       localStorage.removeItem('userInfo');
     },
   },
   
   actions: {
-    // 登录成功后保存 token 和用户信息
-    login({ commit }, { token, userInfo }) {
-      commit('SET_TOKEN', token);
+    // 登录成功后保存用户信息
+    login({ commit }, { userInfo }) {
       commit('SET_USER_INFO', userInfo);
     },
     
