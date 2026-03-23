@@ -11,7 +11,19 @@ module.exports = defineConfig({
 		host: '0.0.0.0', // 允许外部访问
 		port: 8080,
 		allowedHosts: 'all', // 允许所有主机访问，解决内网IP访问403问题
+		compress: false, // 关键：关闭gzip，否则会缓冲SSE
 		proxy: {
+			'/api/chat': {
+				target: API_TARGET,
+				changeOrigin: true,
+				ws: false,
+				// 禁用缓冲，保证流式
+				onProxyRes: (proxyRes) => {
+					delete proxyRes.headers['content-length'];
+					proxyRes.headers['transfer-encoding'] = 'chunked';
+					proxyRes.headers['cache-control'] = 'no-transform';
+				}
+			},
 			'/api':{
 				target: API_TARGET,
 				changeOrigin: true,
