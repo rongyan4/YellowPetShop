@@ -5,8 +5,8 @@ import com.yellow.petshop.model.user.LoginDTO;
 import com.yellow.petshop.model.user.RegisterDTO;
 import com.yellow.petshop.model.user.UserInfo;
 import com.yellow.petshop.service.UserService;
+import com.yellow.petshop.util.CookieUtil;
 import com.yellow.petshop.util.FileUploadUtil;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +25,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private CookieUtil cookieUtil;
 
     /**
      * 用户登录接口
@@ -46,12 +49,8 @@ public class UserController {
         try {
             // 调用服务层进行登录
             String token = userService.login(loginDTO);
-            // 将 token 写入 HttpOnly Cookie
-            Cookie cookie = new Cookie("token", token);
-            cookie.setHttpOnly(true);
-            cookie.setPath("/");
-            cookie.setMaxAge(7 * 24 * 3600); // 7天
-            response.addCookie(cookie);
+            // 将 token 写入 HttpOnly Cookie（SameSite=Lax，Secure 由配置决定）
+            cookieUtil.addCookie(response, "token", token);
             return Result.success("登录成功");
         } catch (RuntimeException e) {
             // 捕获业务异常
@@ -160,11 +159,7 @@ public class UserController {
     @PostMapping("/logout")
     public Result<String> logout(HttpServletResponse response) {
         // 清除 HttpOnly Cookie 中的 token
-        Cookie cookie = new Cookie("token", "");
-        cookie.setHttpOnly(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
-        response.addCookie(cookie);
+        cookieUtil.removeCookie(response, "token");
         return Result.success("退出成功");
     }
 

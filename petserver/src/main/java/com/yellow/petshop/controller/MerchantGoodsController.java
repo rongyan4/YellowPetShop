@@ -136,9 +136,15 @@ public class MerchantGoodsController {
     }
 
     /**
-     * 从Token中获取商家ID
+     * 从请求属性中获取商家ID（由 MerchantJwtInterceptor 注入）
      */
     private Long getMerchantIdFromToken(HttpServletRequest request) {
+        // 优先使用拦截器注入的属性（HttpOnly Cookie 认证后写入）
+        Object merchantIdAttr = request.getAttribute("merchantId");
+        if (merchantIdAttr != null) {
+            return Long.valueOf(merchantIdAttr.toString());
+        }
+        // 降级：从 Authorization 请求头读取（兼容非浏览器客户端）
         String token = request.getHeader("Authorization");
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);

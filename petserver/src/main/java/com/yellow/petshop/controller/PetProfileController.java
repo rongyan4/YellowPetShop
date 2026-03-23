@@ -74,17 +74,19 @@ public class PetProfileController extends BaseController {
     }
 
     /**
-     * 上传宠物头像（无需鉴权）
+     * 上传宠物头像（需要登录）
      */
     @PostMapping("/upload-avatar")
-    public Result<String> uploadAvatar(@RequestParam("file") MultipartFile file) {
+    public Result<String> uploadAvatar(@RequestParam("file") MultipartFile file,
+                                       HttpServletRequest request) {
         if (file.isEmpty()) {
             return Result.error("文件不能为空");
         }
+        Long userId = getUserId(request);
         FileUploadUtil.UploadResult result = FileUploadUtil.uploadFile(
                 file,
                 FileUploadUtil.BusinessType.USER_AVATAR,
-                null
+                userId
         );
         if (!result.isSuccess()) {
             return Result.error(result.getMessage());

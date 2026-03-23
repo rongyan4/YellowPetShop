@@ -1,0 +1,3 @@
+# 开发环境配置
+cookie:
+  secure: false   # 开发环境 http://localhost，不启用 Secure

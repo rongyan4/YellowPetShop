@@ -12,6 +12,9 @@ logging:
 spring:
   application:
     name: petserver
+  # 激活的环境配置文件，可通过启动参数 --spring.profiles.active=prod 切换
+  profiles:
+    active: dev
   #SpringAI 配置
   ai:
     deepseek:
@@ -47,6 +50,10 @@ spring:
     contentnegotiation:
       favor-parameter: false
       favor-path-extension: false
+
+# Cookie 默认配置（由各 profile 覆盖）
+cookie:
+  secure: false
 
 # 服务器配置
 server:

@@ -14,8 +14,8 @@ import com.yellow.petshop.model.comment.CommentVO;
 import com.yellow.petshop.service.MerchantService;
 import com.yellow.petshop.service.MerchantOrderService;
 import com.yellow.petshop.service.MerchantGoodsService;
+import com.yellow.petshop.util.CookieUtil;
 import com.yellow.petshop.util.JwtUtil;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +37,9 @@ public class MerchantController {
     @Autowired
     private MerchantGoodsService merchantGoodsService;
 
+    @Autowired
+    private CookieUtil cookieUtil;
+
     /**
      * 商家登录
      */
@@ -53,12 +56,8 @@ public class MerchantController {
                     userAgent
             );
             
-            // 将 merchant_token 写入 HttpOnly Cookie
-            Cookie cookie = new Cookie("merchant_token", token);
-            cookie.setHttpOnly(true);
-            cookie.setPath("/");
-            cookie.setMaxAge(7 * 24 * 3600); // 7天
-            httpResponse.addCookie(cookie);
+            // 将 merchant_token 写入 HttpOnly Cookie（SameSite=Lax，Secure 由配置决定）
+            cookieUtil.addCookie(httpResponse, "merchant_token", token);
             return Result.success("登录成功");
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -71,11 +70,7 @@ public class MerchantController {
     @PostMapping("/logout")
     public Result<String> logout(HttpServletResponse httpResponse) {
         // 清除 HttpOnly Cookie 中的 merchant_token
-        Cookie cookie = new Cookie("merchant_token", "");
-        cookie.setHttpOnly(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
-        httpResponse.addCookie(cookie);
+        cookieUtil.removeCookie(httpResponse, "merchant_token");
         return Result.success("退出成功");
     }
 
