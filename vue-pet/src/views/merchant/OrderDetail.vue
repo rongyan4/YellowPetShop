@@ -788,6 +788,7 @@ onMounted(() => {
 .form-group input,
 .form-group textarea {
   width: 100%;
+  box-sizing: border-box;
   padding: 12px;
   border: 1px solid #e8e8e8;
   border-radius: 8px;
@@ -809,6 +810,7 @@ onMounted(() => {
 
 .form-select {
   width: 100%;
+  box-sizing: border-box;
   padding: 12px;
   border: 1px solid #e8e8e8;
   border-radius: 8px;

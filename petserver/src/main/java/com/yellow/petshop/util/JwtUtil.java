@@ -17,7 +17,12 @@ public class JwtUtil {
 
     private static String STATIC_SECRET;
 
-    private long expirationTime = 1000 * 60 * 60 * 24 * 7;
+    /** Refresh Token 有效期：7 天 */
+    private static final long RT_EXPIRATION = 1000L * 60 * 60 * 24 * 7;
+    /** Access Token 有效期：2 分钟 */
+    private static final long AT_EXPIRATION = 1000L * 60 * 2;
+
+    private long expirationTime = RT_EXPIRATION;
 
     @Value("${jwt.secret}")
     public void setSecret(String secret) {
@@ -28,37 +33,50 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(STATIC_SECRET.getBytes());
     }
 
-    //生成token（使用User对象 - 客户端）
+    //生成 Refresh Token（使用User对象 - 客户端），有效期7天，存Cookie
     public String generateToken(User user) {
+        return buildToken(user.getId().toString(), user.getUsername(), "customer", RT_EXPIRATION);
+    }
+
+    //生成 Access Token（客户端），有效期2分钟，存localStorage
+    public String generateAccessToken(User user) {
+        return buildToken(user.getId().toString(), user.getUsername(), "customer", AT_EXPIRATION);
+    }
+
+    //生成 Refresh Token（商家端），有效期7天，存Cookie
+    public static String generateToken(Long userId, String username) {
+        SecretKey key = Keys.hmacShaKeyFor(STATIC_SECRET.getBytes());
+        return buildStaticToken(key, userId.toString(), username, "merchant", RT_EXPIRATION);
+    }
+
+    //生成 Access Token（商家端），有效期2分钟，存localStorage
+    public static String generateMerchantAccessToken(Long userId, String username) {
+        SecretKey key = Keys.hmacShaKeyFor(STATIC_SECRET.getBytes());
+        return buildStaticToken(key, userId.toString(), username, "merchant", AT_EXPIRATION);
+    }
+
+    private String buildToken(String subject, String username, String userType, long expiration) {
         return Jwts.builder()
-                //Header
-                .setHeaderParam("typ","JWT")
-                .setHeaderParam("alg","HS256")
-                //Payload
-                .setSubject(user.getId().toString())
-                .claim("username", user.getUsername())
-                .claim("userType", "customer")  // 标识为客户端用户
-                .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
+                .setHeaderParam("typ", "JWT")
+                .setHeaderParam("alg", "HS256")
+                .setSubject(subject)
+                .claim("username", username)
+                .claim("userType", userType)
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .setId(UUID.randomUUID().toString())
-                //Signature
                 .signWith(getKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    //生成token（使用ID和用户名 - 商家端）
-    public static String generateToken(Long userId, String username) {
-        SecretKey key = Keys.hmacShaKeyFor(STATIC_SECRET.getBytes());
+    private static String buildStaticToken(SecretKey key, String subject, String username, String userType, long expiration) {
         return Jwts.builder()
-                //Header
-                .setHeaderParam("typ","JWT")
-                .setHeaderParam("alg","HS256")
-                //Payload
-                .setSubject(userId.toString())
+                .setHeaderParam("typ", "JWT")
+                .setHeaderParam("alg", "HS256")
+                .setSubject(subject)
                 .claim("username", username)
-                .claim("userType", "merchant")  // 标识为商家端用户
-                .setExpiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 24 * 7))
+                .claim("userType", userType)
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .setId(UUID.randomUUID().toString())
-                //Signature
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }

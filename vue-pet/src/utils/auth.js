@@ -1,44 +1,42 @@
 /**
  * 认证工具函数
- * token 已改为 HttpOnly Cookie 存储，前端不再直接读写 token
+ * Refresh Token (RT)：HttpOnly Cookie，有效期7天，由后端自动携带，无需前端操作
+ * Access Token (AT)：localStorage，有效期2分钟，由前端手动携带至 Authorization header
  */
 
 const USER_INFO_KEY = 'userInfo';
+const ACCESS_TOKEN_KEY = 'accessToken';
 
-/**
- * 获取用户信息（从 localStorage）
- * @returns {Object|null}
- */
+// ====== Access Token 操作 ======
+export const getAccessToken = () => localStorage.getItem(ACCESS_TOKEN_KEY);
+export const setAccessToken = (token) => localStorage.setItem(ACCESS_TOKEN_KEY, token);
+export const removeAccessToken = () => localStorage.removeItem(ACCESS_TOKEN_KEY);
+
+// ====== 用户信息操作 ======
 export const getUserInfo = () => {
   const userInfo = localStorage.getItem(USER_INFO_KEY);
   return userInfo ? JSON.parse(userInfo) : null;
 };
 
-/**
- * 设置用户信息
- * @param {Object} userInfo
- */
 export const setUserInfo = (userInfo) => {
   localStorage.setItem(USER_INFO_KEY, JSON.stringify(userInfo));
 };
 
-/**
- * 移除用户信息
- */
 export const removeUserInfo = () => {
   localStorage.removeItem(USER_INFO_KEY);
 };
 
 /**
- * 清除所有认证信息（不含 token，token 由后端通过 Cookie 清除）
+ * 清除所有认证信息（AT + 用户信息）
+ * RT（Cookie）由后端通过 logout 接口清除
  */
 export const clearAuth = () => {
+  removeAccessToken();
   removeUserInfo();
 };
 
 /**
  * 检查是否已登录（根据本地存储的用户信息判断）
- * @returns {boolean}
  */
 export const isAuthenticated = () => {
   return !!getUserInfo();
@@ -46,8 +44,6 @@ export const isAuthenticated = () => {
 
 /**
  * 解析JWT token（不验证签名，仅解析payload）
- * @param {string} token
- * @returns {Object|null}
  */
 export const parseJWT = (token) => {
   try {

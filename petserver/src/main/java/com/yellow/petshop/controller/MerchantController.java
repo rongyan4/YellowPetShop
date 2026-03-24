@@ -14,6 +14,8 @@ import com.yellow.petshop.model.comment.CommentVO;
 import com.yellow.petshop.service.MerchantService;
 import com.yellow.petshop.service.MerchantOrderService;
 import com.yellow.petshop.service.MerchantGoodsService;
+import com.yellow.petshop.service.RefreshTokenStore;
+import com.yellow.petshop.model.token.RefreshToken;
 import com.yellow.petshop.util.CookieUtil;
 import com.yellow.petshop.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,25 +42,82 @@ public class MerchantController {
     @Autowired
     private CookieUtil cookieUtil;
 
+    @Autowired
+    private RefreshTokenStore refreshTokenStore;
+
+    /** RT 有效期：7天（毫秒） */
+    private static final long RT_TTL_MS = 1000L * 60 * 60 * 24 * 7;
+
     /**
      * 商家登录
      */
     @PostMapping("/login")
-    public Result<String> login(@RequestBody MerchantLoginRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
+    public Result<java.util.Map<String, Object>> login(@RequestBody MerchantLoginRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         try {
             String ipAddress = getIpAddress(httpRequest);
             String userAgent = httpRequest.getHeader("User-Agent");
-            
-            String token = merchantService.login(
-                    request.getUsername(), 
-                    request.getPassword(), 
-                    ipAddress, 
+
+            // login() 内部验证账密，返回 RT 明文
+            String refreshToken = merchantService.login(
+                    request.getUsername(),
+                    request.getPassword(),
+                    ipAddress,
                     userAgent
             );
-            
-            // 将 merchant_token 写入 HttpOnly Cookie（SameSite=Lax，Secure 由配置决定）
-            cookieUtil.addCookie(httpResponse, "merchant_token", token);
-            return Result.success("登录成功");
+            Long merchantId = JwtUtil.getUserIdFromToken(refreshToken);
+
+            // 持久化 RT（有状态，支持服务端主动吊销）
+            refreshTokenStore.save(refreshToken, merchantId, "merchant", request.getUsername(), RT_TTL_MS);
+
+            // 生成 AT（2分钟）
+            String accessToken = JwtUtil.generateMerchantAccessToken(merchantId, request.getUsername());
+
+            // RT 写入 HttpOnly Cookie
+            cookieUtil.addCookie(httpResponse, "merchant_token", refreshToken);
+            // AT 返回给前端存 localStorage
+            java.util.Map<String, Object> data = new java.util.HashMap<>();
+            data.put("accessToken", accessToken);
+            return Result.success(data);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 刷新商家 Access Token
+     * 前端 AT 过期后，凭 Cookie 中的 RT（merchant_token）换取新 AT
+     * 访问路径: POST /api/merchant/refresh
+     */
+    @PostMapping("/refresh")
+    public Result<java.util.Map<String, Object>> refresh(HttpServletRequest httpRequest) {
+        // 从 Cookie 读取 RT
+        String refreshToken = null;
+        jakarta.servlet.http.Cookie[] cookies = httpRequest.getCookies();
+        if (cookies != null) {
+            for (jakarta.servlet.http.Cookie cookie : cookies) {
+                if ("merchant_token".equals(cookie.getName())) {
+                    refreshToken = cookie.getValue();
+                    break;
+                }
+            }
+        }
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return Result.error("未提供 Refresh Token，请重新登录");
+        }
+        try {
+            // 有状态校验：查库验证 RT 存在 + 未吊销 + 未过期
+            RefreshToken stored = refreshTokenStore.validate(refreshToken);
+            if (stored == null) {
+                return Result.error("Refresh Token 无效或已过期，请重新登录");
+            }
+            if (!"merchant".equals(stored.getUserType())) {
+                return Result.error("Token 类型错误");
+            }
+            // 生成新 AT（RT 不轮换）
+            String accessToken = JwtUtil.generateMerchantAccessToken(stored.getUserId(), stored.getUsername());
+            java.util.Map<String, Object> data = new java.util.HashMap<>();
+            data.put("accessToken", accessToken);
+            return Result.success(data);
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }
@@ -68,8 +127,18 @@ public class MerchantController {
      * 商家退出登录
      */
     @PostMapping("/logout")
-    public Result<String> logout(HttpServletResponse httpResponse) {
-        // 清除 HttpOnly Cookie 中的 merchant_token
+    public Result<String> logout(HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
+        // 从 Cookie 读取 RT 并吊销（有状态登出）
+        jakarta.servlet.http.Cookie[] cookies = httpRequest.getCookies();
+        if (cookies != null) {
+            for (jakarta.servlet.http.Cookie cookie : cookies) {
+                if ("merchant_token".equals(cookie.getName()) && cookie.getValue() != null && !cookie.getValue().isBlank()) {
+                    try { refreshTokenStore.revoke(cookie.getValue()); } catch (Exception ignored) {}
+                    break;
+                }
+            }
+        }
+        // 清除 HttpOnly Cookie
         cookieUtil.removeCookie(httpResponse, "merchant_token");
         return Result.success("退出成功");
     }

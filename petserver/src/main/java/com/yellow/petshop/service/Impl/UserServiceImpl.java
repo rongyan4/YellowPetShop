@@ -5,6 +5,7 @@ import com.yellow.petshop.model.user.LoginDTO;
 import com.yellow.petshop.model.user.RegisterDTO;
 import com.yellow.petshop.model.user.User;
 import com.yellow.petshop.model.user.UserInfo;
+import com.yellow.petshop.service.RefreshTokenStore;
 import com.yellow.petshop.service.UserService;
 import com.yellow.petshop.util.BCryptUtil;
 import com.yellow.petshop.util.JwtUtil;
@@ -15,6 +16,12 @@ import org.springframework.stereotype.Service;
 public class UserServiceImpl implements UserService {
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private RefreshTokenStore refreshTokenStore;
+
+    /** RT 有效期：7天（毫秒） */
+    private static final long RT_TTL_MS = 1000L * 60 * 60 * 24 * 7;
 
     @Override
     public void register(RegisterDTO registerDTO) {
@@ -53,27 +60,56 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String login(LoginDTO loginDTO) {
-        // 1. 根据用户名查询用户
-        User user = userMapper.selectByUsername(loginDTO.getUsername());
+        return loginDualToken(loginDTO)[0];
+    }
 
+    @Override
+    public String[] loginDualToken(LoginDTO loginDTO) {
+        // 1. 查询用户
+        User user = userMapper.selectByUsername(loginDTO.getUsername());
         if (user == null) {
             throw new RuntimeException("该用户不存在");
         }
-
         // 2. 验证密码
-        boolean passwordMatch = BCryptUtil.verify(loginDTO.getPassword(), user.getPassword());
-        if (!passwordMatch) {
+        if (!BCryptUtil.verify(loginDTO.getPassword(), user.getPassword())) {
             throw new RuntimeException("用户名或密码错误");
         }
-
         // 3. 检查用户状态
         if (!"active".equals(user.getStatus())) {
             throw new RuntimeException("账户已被禁用");
         }
-
-        // 4. 返回token
+        // 4. 生成双Token
         JwtUtil jwtUtil = new JwtUtil();
-        return jwtUtil.generateToken(user);
+        String refreshToken = jwtUtil.generateToken(user);      // RT，7天，存Cookie
+        String accessToken  = jwtUtil.generateAccessToken(user); // AT，2分钟，存localStorage
+        // 5. 将 RT 持久化（有状态，支持服务端主动吊销）
+        refreshTokenStore.save(refreshToken, user.getId(), "customer", user.getUsername(), RT_TTL_MS);
+        return new String[]{refreshToken, accessToken};
+    }
+
+    @Override
+    public String refreshAccessToken(String refreshToken) {
+        // 1. 从存储层验证 RT（有状态校验：存在 + 未吊销 + 未过期）
+        com.yellow.petshop.model.token.RefreshToken stored = refreshTokenStore.validate(refreshToken);
+        if (stored == null) {
+            throw new RuntimeException("Refresh Token 无效或已过期，请重新登录");
+        }
+        if (!"customer".equals(stored.getUserType())) {
+            throw new RuntimeException("Token 类型错误");
+        }
+        // 2. 查询用户（验证账户仍有效）
+        User user = userMapper.selectById(stored.getUserId());
+        if (user == null || !"active".equals(user.getStatus())) {
+            throw new RuntimeException("账户不存在或已被禁用");
+        }
+        // 3. 生成新 AT 返回（RT 不轮换，继续使用直到过期）
+        JwtUtil jwtUtil = new JwtUtil();
+        return jwtUtil.generateAccessToken(user);
+    }
+
+    @Override
+    public void revokeRefreshToken(String refreshToken) {
+        refreshTokenStore.revoke(refreshToken);
     }
 
     @Override

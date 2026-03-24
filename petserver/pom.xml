@@ -84,6 +84,12 @@
             <artifactId>jbcrypt</artifactId>
             <version>0.4</version>
         </dependency>
+        <!-- Jsoup：富文本 XSS 过滤 -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.17.2</version>
+        </dependency>
         <!-- 加载 .env 文件依赖 -->
         <dependency>
             <groupId>io.github.cdimascio</groupId>

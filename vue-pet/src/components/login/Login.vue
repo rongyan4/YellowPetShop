@@ -60,6 +60,7 @@ import { useUserStore } from '@/stores/user'
 import { showToast, showSuccessToast, showFailToast, showLoadingToast, closeToast } from 'vant'
 import { login } from '@/api/user'
 import { getCurrentUserInfo } from '@/api/user'
+import { setAccessToken } from '@/utils/auth'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -116,7 +117,10 @@ const handleLogin = async () => {
     closeToast()
     
     if (response && response.code === 200) {
-      // token 已由后端写入 HttpOnly Cookie，前端只需获取用户信息
+      // RT 已由后端写入 HttpOnly Cookie，AT 存 localStorage
+      if (response.data && response.data.accessToken) {
+        setAccessToken(response.data.accessToken);
+      }
       const infoRes = await getCurrentUserInfo()
       const userInfo = infoRes?.data || { username: username.value }
       

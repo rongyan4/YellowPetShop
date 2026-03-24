@@ -30,24 +30,11 @@ public class MerchantJwtInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        // 优先从 HttpOnly Cookie 中获取 merchant_token
+        // 从 Authorization 请求头读取 Access Token（2分钟有效期，存localStorage）
         String token = null;
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if ("merchant_token".equals(cookie.getName())) {
-                    token = cookie.getValue();
-                    break;
-                }
-            }
-        }
-
-        // 降级：从 Authorization 请求头读取（兼容非浏览器客户端）
-        if (token == null || token.isBlank()) {
-            String authHeader = request.getHeader("Authorization");
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                token = authHeader.substring(7);
-            }
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
         }
 
         if (token == null || token.isBlank()) {
@@ -56,9 +43,10 @@ public class MerchantJwtInterceptor implements HandlerInterceptor {
         }
 
         try {
-            // 验证Token是否有效
+            // 验证Token是否有效（含过期检查）
             if (!jwtUtil.validateToken(token)) {
-                sendErrorResponse(response, 401, "认证令牌无效或已过期");
+                // AT 过期，返回 4010 让前端凭 RT 刷新
+                sendErrorResponse(response, 4010, "Access Token 已过期，请刷新");
                 return false;
             }
 
@@ -90,11 +78,13 @@ public class MerchantJwtInterceptor implements HandlerInterceptor {
 
     /**
      * 发送错误响应
+     * 4010 为业务码，表示 AT 过期需前端刷新，HTTP 状态码统一用 401
      */
-    private void sendErrorResponse(HttpServletResponse response, int status, String message) throws Exception {
-        response.setStatus(status);
+    private void sendErrorResponse(HttpServletResponse response, int httpStatus, String message) throws Exception {
+        int realHttpStatus = (httpStatus == 4010) ? 401 : httpStatus;
+        response.setStatus(realHttpStatus);
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write(String.format("{\"code\":%d,\"msg\":\"%s\",\"data\":null}", status, message));
+        response.getWriter().write(String.format("{\"code\":%d,\"msg\":\"%s\",\"data\":null}", httpStatus, message));
     }
 
     /**

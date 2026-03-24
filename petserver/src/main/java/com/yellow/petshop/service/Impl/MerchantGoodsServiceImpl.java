@@ -11,6 +11,7 @@ import com.yellow.petshop.model.comment.MerchantReplyDTO;
 import com.yellow.petshop.model.home.CommodityInfo;
 import com.yellow.petshop.model.merchant.MerchantOperationLog;
 import com.yellow.petshop.service.MerchantGoodsService;
+import com.yellow.petshop.util.HtmlXssUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,6 +61,10 @@ public class MerchantGoodsServiceImpl implements MerchantGoodsService {
     @Override
     @Transactional
     public void addGoods(CommodityInfo commodity, Long merchantId, String ipAddress) {
+        // XSS 过滤：清洗商品详情富文本，防止商家输入恶意脚本通过 v-html 渲染
+        if (commodity.getDetail() != null) {
+            commodity.setDetail(HtmlXssUtils.clean(commodity.getDetail()));
+        }
         commodity.setIsValid(true);
         commodityMapper.insert(commodity);
         
@@ -70,6 +75,10 @@ public class MerchantGoodsServiceImpl implements MerchantGoodsService {
     @Override
     @Transactional
     public void updateGoods(CommodityInfo commodity, Long merchantId, String ipAddress) {
+        // XSS 过滤：清洗商品详情富文本，防止商家输入恶意脚本通过 v-html 渲染
+        if (commodity.getDetail() != null) {
+            commodity.setDetail(HtmlXssUtils.clean(commodity.getDetail()));
+        }
         commodityMapper.updateById(commodity);
         
         // 记录操作日志

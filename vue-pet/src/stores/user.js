@@ -33,11 +33,12 @@ export const useUserStore = defineStore('user', () => {
   }
 
   /**
-   * 退出登录，清除用户信息（token Cookie 由后端 logout 接口清除）
+   * 退出登录，清除用户信息和 AT（RT Cookie 由后端 logout 接口清除）
    */
   function logout() {
     userInfo.value = null;
     localStorage.removeItem('userInfo');
+    localStorage.removeItem('accessToken');
   }
 
   /**

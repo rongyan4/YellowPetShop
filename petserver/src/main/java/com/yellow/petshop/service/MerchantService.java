@@ -75,7 +75,8 @@ public class MerchantService {
         loginLog.setLoginStatus(1);
         loginLogMapper.insert(loginLog);
 
-        // 生成JWT Token
+        // 生成双 Token：RT（7天）存 Cookie，AT（2分钟）返回给前端存 localStorage
+        // 此处仍返回 RT，MerchantController 会同时调用 generateMerchantAccessToken
         return JwtUtil.generateToken(merchant.getId(), merchant.getUsername());
     }
 

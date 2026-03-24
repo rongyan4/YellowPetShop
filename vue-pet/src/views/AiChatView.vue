@@ -731,7 +731,7 @@ function goBack() {
 .markdown-body del { text-decoration: line-through; color: #999; }
 
 /* ===== 商品卡片组件样式（AI 输出的 HTML 商品展示块）===== */
-/* 注意：scoped 下 v-html 内的元素无法匹配 scoped 选择器，需用 :deep() */
+/* 注意：scoped 下  内的元素无法匹配 scoped 选择器，需用 :deep() */
 :deep(.product-card-list) {
   display: flex;
   flex-direction: column;

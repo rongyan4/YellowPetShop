@@ -27,10 +27,11 @@ export const useMerchantStore = defineStore('merchant', {
       localStorage.setItem('merchant_info', JSON.stringify(info));
     },
 
-    // 商家登出（token Cookie 由后端 logout 接口清除）
+    // 商家登出（RT Cookie 由后端 logout 接口清除，AT 本地清除）
     logout() {
       this.merchantInfo = {};
       localStorage.removeItem('merchant_info');
+      localStorage.removeItem('merchant_accessToken');
     }
   }
 });

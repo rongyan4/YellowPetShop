@@ -37,7 +37,7 @@ public class UserController {
      * @return 登录结果，包含用户ID或token
      */
     @PostMapping("/login")
-    public Result<String> login(@RequestBody LoginDTO loginDTO, HttpServletResponse response) {
+    public Result<Map<String, Object>> login(@RequestBody LoginDTO loginDTO, HttpServletResponse response) {
         // 参数校验
         if (loginDTO.getUsername() == null || loginDTO.getUsername().trim().isEmpty()) {
             return Result.error("用户名不能为空");
@@ -47,17 +47,49 @@ public class UserController {
         }
 
         try {
-            // 调用服务层进行登录
-            String token = userService.login(loginDTO);
-            // 将 token 写入 HttpOnly Cookie（SameSite=Lax，Secure 由配置决定）
-            cookieUtil.addCookie(response, "token", token);
-            return Result.success("登录成功");
+            // 调用服务层进行登录，返回 [refreshToken, accessToken]
+            String[] tokens = userService.loginDualToken(loginDTO);
+            // RT 写入 HttpOnly Cookie（7天）
+            cookieUtil.addCookie(response, "token", tokens[0]);
+            // AT 返回给前端，存 localStorage（2分钟）
+            Map<String, Object> data = new HashMap<>();
+            data.put("accessToken", tokens[1]);
+            return Result.success(data);
         } catch (RuntimeException e) {
-            // 捕获业务异常
             return Result.error(e.getMessage());
         } catch (Exception e) {
-            // 捕获其他异常
             return Result.error("登录失败，请稍后重试");
+        }
+    }
+
+    /**
+     * 刷新 Access Token
+     * 前端 AT 过期后，凭 Cookie 中的 RT 换取新 AT
+     * 访问路径: POST /api/user/refresh
+     */
+    @PostMapping("/refresh")
+    public Result<Map<String, Object>> refresh(jakarta.servlet.http.HttpServletRequest request) {
+        // 从 Cookie 读取 RT
+        String refreshToken = null;
+        jakarta.servlet.http.Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (jakarta.servlet.http.Cookie cookie : cookies) {
+                if ("token".equals(cookie.getName())) {
+                    refreshToken = cookie.getValue();
+                    break;
+                }
+            }
+        }
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return Result.error("未提供 Refresh Token，请重新登录");
+        }
+        try {
+            String accessToken = userService.refreshAccessToken(refreshToken);
+            Map<String, Object> data = new HashMap<>();
+            data.put("accessToken", accessToken);
+            return Result.success(data);
+        } catch (RuntimeException e) {
+            return Result.error(e.getMessage());
         }
     }
 
@@ -157,8 +189,18 @@ public class UserController {
      * @return 退出结果
      */
     @PostMapping("/logout")
-    public Result<String> logout(HttpServletResponse response) {
-        // 清除 HttpOnly Cookie 中的 token
+    public Result<String> logout(jakarta.servlet.http.HttpServletRequest request, HttpServletResponse response) {
+        // 从 Cookie 读取 RT 并吊销（有状态登出）
+        jakarta.servlet.http.Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (jakarta.servlet.http.Cookie cookie : cookies) {
+                if ("token".equals(cookie.getName()) && cookie.getValue() != null && !cookie.getValue().isBlank()) {
+                    try { userService.revokeRefreshToken(cookie.getValue()); } catch (Exception ignored) {}
+                    break;
+                }
+            }
+        }
+        // 清除 HttpOnly Cookie
         cookieUtil.removeCookie(response, "token");
         return Result.success("退出成功");
     }

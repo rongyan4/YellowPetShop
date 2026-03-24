@@ -36,6 +36,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/api/merchant/login",           // 商家登录接口
                         "/api/merchant/register",         // 商家注册接口（如果有）
+                        "/api/merchant/refresh",          // 商家 AT 刷新接口
                         "/api/user/login",               // 客户登录接口
                         "/api/user/register"             // 客户注册接口
                 )
@@ -48,6 +49,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/api/merchant/**",              //商家接口
                         "/api/user/login",               // 客户登录接口
+                        "/api/user/refresh",             // 客户 AT 刷新接口
                         "/api/user/register",             // 客户注册接口
                         "/api/goods/**",                    //(商品浏览)
                         "/api/category/**",               //(分类浏览)

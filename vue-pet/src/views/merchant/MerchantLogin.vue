@@ -92,6 +92,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { merchantLogin, getMerchantInfo } from '@/api/merchant';
 import { useMerchantStore } from '@/stores/merchant';
+import { setMerchantAccessToken } from '@/utils/merchantAuth';
 import { showToast, showSuccessToast, showFailToast } from 'vant';
 
 const router = useRouter();
@@ -117,7 +118,10 @@ const handleLogin = async () => {
     });
 
     if (response && response.code === 200) {
-      // token 已由后端写入 HttpOnly Cookie，前端只需获取商家信息
+      // RT 已由后端写入 HttpOnly Cookie，AT 存 localStorage
+      if (response.data && response.data.accessToken) {
+        setMerchantAccessToken(response.data.accessToken);
+      }
       const infoRes = await getMerchantInfo();
       const merchantInfo = infoRes?.data || { username: username.value };
 

@@ -1,5 +1,7 @@
 import axios from 'axios';
 import { showToast } from 'vant';
+import { getAccessToken, setAccessToken, removeAccessToken, removeUserInfo } from './auth';
+import { getMerchantAccessToken, setMerchantAccessToken, removeMerchantAccessToken } from './merchantAuth';
 
 // 全局请求计数器
 let globalRequestCounter = 0;
@@ -18,6 +20,78 @@ const service = axios.create({
     'Pragma': 'no-cache'
   }
 });
+
+// 是否正在刷新 AT（防止并发请求多次刷新）
+let isRefreshing = false;
+// 等待刷新完成的队列
+let refreshSubscribers = [];
+const onRefreshed = (newToken) => {
+  refreshSubscribers.forEach(cb => cb(newToken));
+  refreshSubscribers = [];
+};
+
+/**
+ * 调用刷新接口换取新 AT
+ * @param {string} refreshUrl - 刷新端点，客户端用 user/refresh，商家端用 merchant/refresh
+ */
+const refreshAccessToken = async (refreshUrl) => {
+  // 使用原生 axios 直接请求，绕过拦截器，避免死循环
+  const baseURL = '/api/';
+  const response = await axios.post(
+    baseURL + refreshUrl,
+    {},
+    { withCredentials: true }  // 携带 RT Cookie
+  );
+  const res = response.data;  // 这里是原始 response.data，即 Result 对象
+  if (res.code !== 200 || !res.data || !res.data.accessToken) {
+    throw new Error(res.msg || '刷新 Token 失败，请重新登录');
+  }
+  return res.data.accessToken;
+};
+
+// 统一处理 AT 失效：刷新并重试原请求
+const handleRefreshAndRetry = async (originalConfig) => {
+  const isMerchant = (originalConfig.url || '').includes('merchant');
+  const refreshUrl = isMerchant ? 'merchant/refresh' : 'user/refresh';
+
+  if (!isRefreshing) {
+    isRefreshing = true;
+    try {
+      const newAt = await refreshAccessToken(refreshUrl);
+      if (isMerchant) {
+        setMerchantAccessToken(newAt);
+      } else {
+        setAccessToken(newAt);
+      }
+      onRefreshed(newAt);
+
+      originalConfig.headers = originalConfig.headers || {};
+      originalConfig.headers['Authorization'] = 'Bearer ' + newAt;
+      originalConfig.headers['X-Is-Refresh'] = '1';
+      return service(originalConfig);
+    } catch (e) {
+      if (isMerchant) {
+        removeMerchantAccessToken();
+      } else {
+        removeAccessToken();
+        removeUserInfo();
+      }
+      window.location.href = isMerchant ? '/merchant/login' : '/home';
+      return Promise.reject(e);
+    } finally {
+      isRefreshing = false;
+    }
+  }
+
+  return new Promise(resolve => {
+    refreshSubscribers.push(newToken => {
+      originalConfig.headers = originalConfig.headers || {};
+      originalConfig.headers['Authorization'] = 'Bearer ' + newToken;
+      originalConfig.headers['X-Is-Refresh'] = '1';
+      resolve(service(originalConfig));
+    });
+  });
+};
 
 // 请求拦截器
 service.interceptors.request.use(
@@ -39,6 +113,15 @@ service.interceptors.request.use(
       config.headers['Cache-Control'] = 'no-cache';
       config.headers['Pragma'] = 'no-cache';
     }
+
+    // 自动附带 Access Token（跳过刷新请求本身，避免死循环）
+    if (!config._isRefresh) {
+      const isMerchant = (config.url || '').includes('merchant');
+      const at = isMerchant ? getMerchantAccessToken() : getAccessToken();
+      if (at) {
+        config.headers['Authorization'] = 'Bearer ' + at;
+      }
+    }
     
     return config;
   },
@@ -50,7 +133,7 @@ service.interceptors.request.use(
 
 // 响应拦截器
 service.interceptors.response.use(
-  response => {
+  async response => {
     const res = response.data;
     const requestId = response.config.headers['X-Request-ID'];
     
@@ -72,6 +155,25 @@ service.interceptors.response.use(
     return res;
   },
   error => {
+    const status = error?.response?.status;
+    const bizCode = error?.response?.data?.code;
+
+    // HTTP 401 且业务码 4010：AT 过期，尝试刷新
+    if (
+      status === 401 &&
+      bizCode === 4010 &&
+      error.config &&
+      !(error.config.headers && error.config.headers['X-Is-Refresh'])
+    ) {
+      console.warn('[Auth] AccessToken 过期，尝试刷新并重试:', error.config.url);
+      return handleRefreshAndRetry(error.config);
+    }
+
+    // HTTP 401 但非 4010：未登录/无权限，不触发刷新
+    if (status === 401 && bizCode !== 4010) {
+      console.warn('[Auth] 401 非过期场景，不执行刷新:', { url: error?.config?.url, bizCode });
+    }
+
     console.error('响应错误:', error);
     let errorMsg = '网络错误，请稍后重试';
     let shouldShowToast = true;
@@ -82,12 +184,7 @@ service.interceptors.response.use(
           errorMsg = '请求参数错误';
           break;
         case 401: {
-          // 判断是否是商家端请求
-          const isMerchantRequest = error.config.url.includes('/merchant');
-          if (isMerchantRequest) {
-            window.location.href = '/merchant/login';
-          }
-          // token 存在 HttpOnly Cookie 中，无需手动清除
+          // 4010 已在上面尝试刷新；走到这里说明刷新失败或本身就是未登录
           shouldShowToast = false;
           break;
         }
