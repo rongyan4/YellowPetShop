@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.sql.SQLException;
 
@@ -45,6 +46,16 @@ public class GlobalExceptionHandler {
     public Result<Void> handleDataAccessException(DataAccessException e) {
         log.error("数据访问异常: {}", e.getMessage(), e);
         return Result.error("数据访问失败");
+    }
+
+    /**
+     * 处理上传文件大小超限异常
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<Void> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e) {
+        log.warn("上传文件超出大小限制: {}", e.getMessage());
+        return Result.error("上传文件过大，请上传 10MB 以内的文件");
     }
 
     /**

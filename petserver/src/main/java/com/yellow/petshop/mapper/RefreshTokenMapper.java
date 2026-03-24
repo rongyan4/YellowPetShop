@@ -6,6 +6,8 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.time.LocalDateTime;
+
 public interface RefreshTokenMapper extends BaseMapper<RefreshToken> {
 
     /**
@@ -25,4 +27,17 @@ public interface RefreshTokenMapper extends BaseMapper<RefreshToken> {
      */
     @Update("UPDATE refresh_token SET revoked = 1 WHERE token_hash = #{tokenHash}")
     void revokeByTokenHash(@Param("tokenHash") String tokenHash);
+
+    /**
+     * 按用户直接覆盖 RT（有则更新，无则返回0由上层插入）
+     */
+    @Update("UPDATE refresh_token " +
+            "SET token_hash = #{tokenHash}, username = #{username}, expire_time = #{expireTime}, create_time = #{createTime}, revoked = 0 " +
+            "WHERE user_id = #{userId} AND user_type = #{userType}")
+    int updateByUser(@Param("tokenHash") String tokenHash,
+                     @Param("userId") Long userId,
+                     @Param("userType") String userType,
+                     @Param("username") String username,
+                     @Param("expireTime") LocalDateTime expireTime,
+                     @Param("createTime") LocalDateTime createTime);
 }

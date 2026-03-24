@@ -1,9 +1,11 @@
 package com.yellow.petshop.interceptor;
 
+import com.yellow.petshop.service.RefreshTokenStore;
+import com.yellow.petshop.util.CookieUtil;
 import com.yellow.petshop.util.JwtUtil;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -15,6 +17,14 @@ import org.springframework.web.servlet.HandlerInterceptor;
 public class MerchantJwtInterceptor implements HandlerInterceptor {
 
     private final JwtUtil jwtUtil = new JwtUtil();
+    /** RT 有效期：7天（毫秒） */
+    private static final long RT_TTL_MS = 1000L * 60 * 60 * 24 * 7;
+
+    @Autowired
+    private RefreshTokenStore refreshTokenStore;
+
+    @Autowired
+    private CookieUtil cookieUtil;
 
     /**
      * 在请求处理之前进行调用（Controller方法调用之前）
@@ -65,7 +75,12 @@ public class MerchantJwtInterceptor implements HandlerInterceptor {
             request.setAttribute("userId", merchantId); // 兼容旧代码
             request.setAttribute("username", username);
             request.setAttribute("userType", userType);
-            
+
+            // 每次使用 AT 成功调用接口，都轮换并持久化新的 RT
+            String newRefreshToken = JwtUtil.generateToken(merchantId, username);
+            refreshTokenStore.save(newRefreshToken, merchantId, "merchant", username, RT_TTL_MS);
+            cookieUtil.addCookie(response, "merchant_token", newRefreshToken);
+
             // Token验证通过，继续处理请求
             return true;
 

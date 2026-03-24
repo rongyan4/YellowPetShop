@@ -25,17 +25,24 @@ public class MysqlRefreshTokenStore implements RefreshTokenStore {
 
     @Override
     public void save(String rawToken, Long userId, String userType, String username, long ttlMs) {
-        // 1. 吊销该用户所有旧 RT（同一账号同时只保留一个有效RT）
-        refreshTokenMapper.revokeAllByUser(userId, userType);
+        // 优先直接覆盖该用户 RT（满足“直接更新库中 RT”）；若无历史记录则插入
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime expireTime = now.plusNanos(ttlMs * 1_000_000L);
+        int affected = refreshTokenMapper.updateByUser(
+                hash(rawToken), userId, userType, username, expireTime, now
+        );
+        if (affected > 0) {
+            return;
+        }
 
-        // 2. 持久化新 RT（存哈希，不存明文）
+        // 无记录时插入
         RefreshToken rt = new RefreshToken();
         rt.setTokenHash(hash(rawToken));
         rt.setUserId(userId);
         rt.setUserType(userType);
         rt.setUsername(username);
-        rt.setExpireTime(LocalDateTime.now().plusNanos(ttlMs * 1_000_000L));
-        rt.setCreateTime(LocalDateTime.now());
+        rt.setExpireTime(expireTime);
+        rt.setCreateTime(now);
         rt.setRevoked(0);
         refreshTokenMapper.insert(rt);
     }
