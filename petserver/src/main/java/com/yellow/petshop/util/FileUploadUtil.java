@@ -1,16 +1,11 @@
 package com.yellow.petshop.util;
 
-import com.yellow.petshop.config.FileUploadConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -18,15 +13,16 @@ import java.util.*;
 /**
  * 文件上传工具类
  * 统一处理各种业务场景的文件上传
+ * 现在上传到OSS而非本地存储
  */
 @Component
 public class FileUploadUtil {
 
-    private static FileUploadConfig fileUploadConfig;
+    private static OssUtil ossUtil;
 
     @Autowired
-    public void setFileUploadConfig(FileUploadConfig config) {
-        FileUploadUtil.fileUploadConfig = config;
+    public void setOssUtil(OssUtil ossUtil) {
+        FileUploadUtil.ossUtil = ossUtil;
     }
 
     /**
@@ -37,7 +33,7 @@ public class FileUploadUtil {
         COMMENT_IMAGE("comment", 5 * 1024 * 1024, Arrays.asList("image/jpeg", "image/png", "image/gif", "image/webp")),
         GOODS_IMAGE("goods", 10 * 1024 * 1024, Arrays.asList("image/jpeg", "image/png", "image/gif", "image/webp"));
 
-        private final String path;                // 存储路径
+        private final String path;                // OSS存储路径（子目录）
         private final long maxSize;               // 最大文件大小（字节）
         private final List<String> allowedTypes;  // 允许的文件类型
 
@@ -93,7 +89,7 @@ public class FileUploadUtil {
     }
 
     /**
-     * 上传文件
+     * 上传文件到OSS
      *
      * @param file         上传的文件
      * @param businessType 业务类型
@@ -124,29 +120,22 @@ public class FileUploadUtil {
             // 5. 生成文件名
             String fileName = generateFileName(businessType, businessId, extension);
 
-            // 6. 确定保存路径
-            String uploadDir = fileUploadConfig.getBaseDir() + "/" + businessType.getPath() + "/";
-            File directory = new File(uploadDir);
-            if (!directory.exists()) {
-                directory.mkdirs();
+            // 6. 上传到OSS（使用业务类型路径作为子目录）
+            String imageUrl;
+            if (ossUtil != null) {
+                imageUrl = ossUtil.uploadFile(file, businessType.getPath());
+            } else {
+                // fallback：如果没有注入OssUtil，返回错误
+                return new UploadResult(false, "OSS服务未配置，文件上传失败");
             }
 
-            // 7. 保存文件
-            Path filePath = Paths.get(uploadDir + fileName);
-            Files.write(filePath, file.getBytes());
-
-            // 8. 生成相对路径URL
-            String businessPath = businessType.getPath() + "/" + fileName;
-            String imageUrl = fileUploadConfig.getRelativeUrl(businessPath);
-
-            // 9. 删除旧文件（仅用户头像场景，且 businessId 不为空时）
-            if (businessType == BusinessType.USER_AVATAR && businessId != null) {
-                deleteOldFiles(directory, businessType, businessId, fileName);
-            }
-
-            // 10. 返回结果
+            // 7. 返回结果
             String uploadTime = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME);
-            return new UploadResult(true, "上传成功", imageUrl, fileName, file.getSize(), uploadTime);
+
+            // 从完整URL中提取文件名用于返回
+            String savedFileName = fileName;
+
+            return new UploadResult(true, "上传成功", imageUrl, savedFileName, file.getSize(), uploadTime);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -158,9 +147,9 @@ public class FileUploadUtil {
     }
 
     /**
-     * 删除文件（含路径穿越防护）
+     * 删除OSS文件
      *
-     * @param imageUrl 图片URL（相对路径）
+     * @param imageUrl 图片的完整OSS URL
      * @return 是否删除成功
      */
     public static boolean deleteFile(String imageUrl) {
@@ -168,20 +157,16 @@ public class FileUploadUtil {
             return false;
         }
         try {
-            String relativePath = imageUrl;
-            if (imageUrl.startsWith(fileUploadConfig.getUrlPrefix())) {
-                relativePath = imageUrl.substring(fileUploadConfig.getUrlPrefix().length());
-            }
-
-            // 路径穿越防护：确保目标路径在 baseDir 范围内
-            Path basePath = Paths.get(fileUploadConfig.getBaseDir()).toAbsolutePath().normalize();
-            Path targetPath = Paths.get(fileUploadConfig.getBaseDir() + relativePath).toAbsolutePath().normalize();
-            if (!targetPath.startsWith(basePath)) {
+            if (ossUtil == null) {
                 return false;
             }
-
-            File file = targetPath.toFile();
-            return file.exists() && file.delete();
+            // 从完整URL中提取objectName（相对路径）
+            String objectName = extractObjectNameFromUrl(imageUrl);
+            if (objectName == null) {
+                return false;
+            }
+            ossUtil.deleteFile(objectName);
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -189,6 +174,23 @@ public class FileUploadUtil {
     }
 
     // ==================== 私有辅助方法 ====================
+
+    /**
+     * 从完整的OSS URL中提取objectName
+     * 例如：https://bucket.oss-cn-hangzhou.aliyuncs.com/goods/uuid.jpg -> goods/uuid.jpg
+     */
+    private static String extractObjectNameFromUrl(String imageUrl) {
+        try {
+            // 找到第三个/之后的部分作为objectName
+            int firstSlash = imageUrl.indexOf("//");
+            if (firstSlash < 0) return null;
+            int thirdSlash = imageUrl.indexOf("/", firstSlash + 2);
+            if (thirdSlash < 0) return null;
+            return imageUrl.substring(thirdSlash + 1);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     /**
      * 通过读取文件魔数（Magic Bytes）检测真实 MIME 类型
@@ -258,27 +260,6 @@ public class FileUploadUtil {
             return prefix + "_" + businessId + "_" + timestamp + "_" + random + extension;
         } else {
             return prefix + "_" + timestamp + "_" + random + extension;
-        }
-    }
-
-    /**
-     * 删除旧文件（用于替换头像时清理旧文件）
-     */
-    private static void deleteOldFiles(File directory, BusinessType businessType,
-                                       Long businessId, String currentFileName) {
-        String prefix;
-        switch (businessType) {
-            case USER_AVATAR:   prefix = "user_" + businessId + "_";    break;
-            case COMMENT_IMAGE: prefix = "comment_" + businessId + "_"; break;
-            case GOODS_IMAGE:   prefix = "goods_" + businessId + "_";   break;
-            default: return;
-        }
-        File[] oldFiles = directory.listFiles((dir, name) ->
-                name.startsWith(prefix) && !name.equals(currentFileName));
-        if (oldFiles != null) {
-            for (File oldFile : oldFiles) {
-                oldFile.delete();
-            }
         }
     }
 

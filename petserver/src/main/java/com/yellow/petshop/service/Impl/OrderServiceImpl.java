@@ -73,39 +73,28 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public OrderVO createOrder(Long userId, CreateOrderDTO createOrderDTO) {
-        System.out.println("=== 开始创建订单 ===");
-        System.out.println("1. 用户ID: " + userId);
-        System.out.println("2. 订单DTO: " + createOrderDTO);
-        System.out.println("3. 订单DTO是否为null: " + (createOrderDTO == null));
+
         
         if (createOrderDTO != null) {
-            System.out.println("4. items字段: " + createOrderDTO.getItems());
-            System.out.println("5. items是否为null: " + (createOrderDTO.getItems() == null));
+
             if (createOrderDTO.getItems() != null) {
-                System.out.println("6. items大小: " + createOrderDTO.getItems().size());
-                System.out.println("7. items是否为空: " + createOrderDTO.getItems().isEmpty());
+
             }
         }
         
         // 验证收货信息
         if (createOrderDTO.getReceiverName() == null || createOrderDTO.getReceiverName().isEmpty()) {
-            System.out.println("ERROR: 收货人姓名为空");
             throw new RuntimeException("请填写收货人姓名");
         }
         if (createOrderDTO.getReceiverPhone() == null || createOrderDTO.getReceiverPhone().isEmpty()) {
-            System.out.println("ERROR: 收货人电话为空");
             throw new RuntimeException("请填写收货人电话");
         }
         if (createOrderDTO.getReceiverAddress() == null || createOrderDTO.getReceiverAddress().isEmpty()) {
-            System.out.println("ERROR: 收货地址为空");
             throw new RuntimeException("请填写收货地址");
         }
         
         // 验证订单商品列表
         if (createOrderDTO.getItems() == null || createOrderDTO.getItems().isEmpty()) {
-            System.out.println("ERROR: 订单商品信息不完整");
-            System.out.println("   - items == null: " + (createOrderDTO.getItems() == null));
-            System.out.println("   - items.isEmpty(): " + (createOrderDTO.getItems() != null && createOrderDTO.getItems().isEmpty()));
             throw new RuntimeException("订单商品信息不完整");
         }
         
